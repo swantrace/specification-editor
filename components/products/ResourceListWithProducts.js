@@ -21,7 +21,7 @@ import {
 } from '@shopify/polaris';
 import axios from 'axios';
 import { parse } from 'json2csv';
-import EditProductModalContent from './modal/EditProductModalContent';
+import EditProductModalContent from './EditProductModalContent';
 import {
   addslashes,
   getDownloadLink,
@@ -29,7 +29,7 @@ import {
   getProductInputPayload,
   getSpecificationGroups,
   getViewProductsTableInfo,
-} from '../utils';
+} from '../../utils';
 
 const GET_PRODUCTS = gql`
   query getProducts(

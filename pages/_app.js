@@ -19,9 +19,8 @@ const client = new ApolloClient({
         fields: {
           products: {
             keyArgs: false,
-            merge(existing = [], incoming) {
-              console.log(existing, incoming);
-              return incoming;
+            merge(...args) {
+              return args[1];
             },
           },
         },
@@ -44,7 +43,7 @@ class MyApp extends App {
       <AppProvider i18n={translations}>
         <Provider
           config={{
-            apiKey: API_KEY,
+            apiKey: process.env.API_KEY,
             shopOrigin,
             forceRedirect: true,
           }}

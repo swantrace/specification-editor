@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Layout, Page, ButtonGroup, Button, Toast } from '@shopify/polaris';
-import ResourceListWithProducts from '../components/ResourceListWithProducts';
+import ResourceListWithProducts from '../components/products/ResourceListWithProducts';
 
 const Index = () => {
   const [modalStatus, setModalStatus] = useState(0);

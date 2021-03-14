@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { gql, useApolloClient, useMutation, useQuery } from '@apollo/client';
 import {
   Card,
@@ -12,7 +12,8 @@ import {
   Pagination,
   TextStyle,
 } from '@shopify/polaris';
-import EditCollectionModalContent from './modal/EditCollectionModalContent';
+import PropTypes from 'prop-types';
+import EditCollectionModalContent from './EditCollectionModalContent';
 
 const GET_COLLECTIONS = gql`
   query getCollections {
@@ -100,7 +101,7 @@ function ResourceListWithCollections({ setToastActive, setToastContent }) {
   const [modalEditingCollection, setModalEditingCollection] = useState(null);
   const client = useApolloClient();
   const modalContentWrapperRef = useRef();
-  const { loading, error, data: dataWithCollections, fetchMore } = useQuery(
+  const { loading, data: dataWithCollections, fetchMore } = useQuery(
     GET_COLLECTIONS,
     {
       variables: {
@@ -243,15 +244,13 @@ function ResourceListWithCollections({ setToastActive, setToastContent }) {
                   </h3>
                   <h6>{collection.id}</h6>
                 </Stack.Item>
-                <Stack.Item>
-                  <ButtonGroup>
-                    <Button
-                      onClick={() => handleEditButtonClicked(collection.id)}
-                    >
-                      Edit
-                    </Button>
-                  </ButtonGroup>
-                </Stack.Item>
+                <ButtonGroup>
+                  <Button
+                    onClick={() => handleEditButtonClicked(collection.id)}
+                  >
+                    Edit
+                  </Button>
+                </ButtonGroup>
               </Stack>
             </ResourceItem>
           );
@@ -291,5 +290,10 @@ function ResourceListWithCollections({ setToastActive, setToastContent }) {
     </Card>
   );
 }
+
+ResourceListWithCollections.propTypes = {
+  setToastActive: PropTypes.func,
+  setToastContent: PropTypes.func,
+};
 
 export default ResourceListWithCollections;

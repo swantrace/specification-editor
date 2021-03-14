@@ -16,8 +16,6 @@ function EditCollectionModalContent({ modalEditingCollection }) {
     }
   );
 
-  console.log(collectionImageInfoArray);
-
   const handleCollectionImageInfoAdderButtonClicked = () => {
     if (imageUrl && imageTarget && imageText) {
       setCollectionImageInfoArray((previousCollectionImageInfoArray) => [

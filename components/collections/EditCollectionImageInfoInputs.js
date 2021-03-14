@@ -7,11 +7,6 @@ function EditCollectionImageInfoInputs({
   imageIndex,
   handleCollectionImageInfoRemoveButtonClicked,
 }) {
-  console.log(
-    imageInfo,
-    imageIndex,
-    handleCollectionImageInfoRemoveButtonClicked
-  );
   const [imageUrl, setImageUrl] = useState(() => imageInfo?.imageUrl ?? '');
   const [imageTarget, setImageTarget] = useState(
     () => imageInfo?.imageTarget ?? ''

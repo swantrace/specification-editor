@@ -1,6 +1,6 @@
 import { Page, Layout, Toast } from '@shopify/polaris';
 import { useState } from 'react';
-import ResourceListWithCollections from '../components/ResourceListWithCollections';
+import ResourceListWithCollections from '../components/collections/ResourceListWithCollections';
 
 const Collections = () => {
   const [toastActive, setToastActive] = useState(false);

@@ -43,7 +43,6 @@ function EditProductModalContent({
           toBeAddedSpecificationNames.includes(specification.name)
         ),
       ].map((specification) => {
-        console.log('specification', specification);
         switch (specification.type) {
           case 'select':
             return (

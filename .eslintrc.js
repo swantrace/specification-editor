@@ -3,14 +3,15 @@ module.exports = {
     commonjs: true,
     browser: true,
     es2021: true,
+    node: true,
   },
   extends: [
     'airbnb',
+    'prettier',
     'plugin:shopify/react',
     'plugin:shopify/polaris',
     'plugin:shopify/jest',
     'plugin:shopify/webpack',
-    'prettier',
   ],
   parserOptions: {
     ecmaVersion: 12,
@@ -20,10 +21,15 @@ module.exports = {
   rules: {
     'react/react-in-jsx-scope': 'off',
     'import/no-unresolved': 'off',
-    'prettier/prettier': ['error'],
     'no-underscore-dangle': ['error', { allow: ['__APOLLO_CLIENT__'] }],
     'no-console': ['off'],
     'no-debugger': ['off'],
+    'import/extensions': 0,
+    'prettier/prettier': ['error'],
+    'react/jsx-wrap-multilines': [
+      'error',
+      { declaration: false, assignment: false },
+    ],
   },
   overrides: [
     {
