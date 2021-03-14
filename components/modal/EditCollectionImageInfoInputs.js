@@ -1,5 +1,6 @@
-import { Stack, Button, FormLayout, TextField } from "@shopify/polaris";
-import { useState } from "react";
+import { Stack, Button, FormLayout, TextField } from '@shopify/polaris';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
 
 function EditCollectionImageInfoInputs({
   imageInfo,
@@ -11,15 +12,11 @@ function EditCollectionImageInfoInputs({
     imageIndex,
     handleCollectionImageInfoRemoveButtonClicked
   );
-  const [imageUrl, setImageUrl] = useState(() => {
-    return imageInfo?.imageUrl ?? "";
-  });
-  const [imageTarget, setImageTarget] = useState(() => {
-    return imageInfo?.imageTarget ?? "";
-  });
-  const [imageText, setImageText] = useState(() => {
-    return imageInfo?.imageText ?? "";
-  });
+  const [imageUrl, setImageUrl] = useState(() => imageInfo?.imageUrl ?? '');
+  const [imageTarget, setImageTarget] = useState(
+    () => imageInfo?.imageTarget ?? ''
+  );
+  const [imageText, setImageText] = useState(() => imageInfo?.imageText ?? '');
   return (
     <FormLayout>
       <Stack alignment="trailing">
@@ -50,18 +47,22 @@ function EditCollectionImageInfoInputs({
             name={`${imageIndex}_imageText`}
           />
         </Stack.Item>
-        <Stack.Item>
-          <Button
-            onClick={() => {
-              handleCollectionImageInfoRemoveButtonClicked(imageIndex);
-            }}
-          >
-            Remove
-          </Button>
-        </Stack.Item>
+        <Button
+          onClick={() => {
+            handleCollectionImageInfoRemoveButtonClicked(imageIndex);
+          }}
+        >
+          Remove
+        </Button>
       </Stack>
     </FormLayout>
   );
 }
+
+EditCollectionImageInfoInputs.propTypes = {
+  imageInfo: PropTypes.object,
+  imageIndex: PropTypes.number,
+  handleCollectionImageInfoRemoveButtonClicked: PropTypes.func,
+};
 
 export default EditCollectionImageInfoInputs;

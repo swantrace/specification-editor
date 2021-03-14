@@ -1,4 +1,4 @@
-import { gql, useApolloClient, useMutation, useQuery } from "@apollo/client";
+import { gql, useApolloClient, useQuery } from '@apollo/client';
 import {
   Autocomplete,
   Stack,
@@ -13,14 +13,14 @@ import {
   Select,
   Button,
   Toast,
-} from "@shopify/polaris";
-import { useCallback, useEffect, useState } from "react";
-import { titleCase } from "../utils";
-import difference from "lodash.difference";
-import SettingRuleInputs from "../components/settings/SettingRuleInputs";
-import axios from "axios";
-import slugify from "slugify";
-import pickBy from "lodash.pickby";
+} from '@shopify/polaris';
+import { useCallback, useEffect, useState } from 'react';
+import difference from 'lodash.difference';
+import axios from 'axios';
+import slugify from 'slugify';
+import pickBy from 'lodash.pickby';
+import SettingRuleInputs from '../components/settings/SettingRuleInputs';
+import { titleCase } from '../utils';
 
 const GET_SHOP_DTM_METAFIELDS = gql`
   query getShopDtmMetafields {
@@ -44,55 +44,53 @@ const GET_SHOP_DTM_METAFIELDS = gql`
 const Settings = () => {
   const client = useApolloClient();
   const [toastActive, setToastActive] = useState(false);
-  const [toastContent, setToastContent] = useState("");
+  const [toastContent, setToastContent] = useState('');
   const { data: dataWithShopDtmMetafields } = useQuery(GET_SHOP_DTM_METAFIELDS);
   const [
     toBeSubmittedSpecificationRules,
     setToBeSubmittedSpecificationRules,
   ] = useState([]);
 
-  const [labelValue, setLabelValue] = useState("");
-  const [nameValue, setNameValue] = useState("");
-  const [positionValue, setPositionValue] = useState("tag");
-  const [typeValue, setTypeValue] = useState("text");
+  const [labelValue, setLabelValue] = useState('');
+  const [nameValue, setNameValue] = useState('');
+  const [positionValue, setPositionValue] = useState('tag');
+  const [typeValue, setTypeValue] = useState('text');
   const [optionsValue, setOptionsValue] = useState([]);
   const resetSpecificationRuleAdderInputs = () => {
-    setLabelValue("");
-    setNameValue("");
-    setPositionValue("tag");
-    setTypeValue("text");
+    setLabelValue('');
+    setNameValue('');
+    setPositionValue('tag');
+    setTypeValue('text');
     setOptionsValue([]);
   };
 
   const deselectedOptions = [
-    { value: "price50", label: "Price +- 50" },
-    { value: "collection", label: "Same collection" },
-    { value: "brand", label: "Same brand" },
-    { value: "type", label: "Same product type" },
+    { value: 'price50', label: 'Price +- 50' },
+    { value: 'collection', label: 'Same collection' },
+    { value: 'brand', label: 'Same brand' },
+    { value: 'type', label: 'Same product type' },
   ];
   const [selectedOptions, setSelectedOptions] = useState([]);
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState('');
   const [options, setOptions] = useState(deselectedOptions);
 
   useEffect(() => {
     const specificationRulesFromQuery = JSON.parse(
       dataWithShopDtmMetafields?.shop?.metafields?.edges?.filter(
-        ({ node }) => node?.key === "info"
-      )?.[0]?.node?.value ?? "{}"
+        ({ node }) => node?.key === 'info'
+      )?.[0]?.node?.value ?? '{}'
     );
     const similarProductsRulesFromQuery = JSON.parse(
       dataWithShopDtmMetafields?.shop?.metafields?.edges?.filter(
-        ({ node }) => node?.key === "similar"
-      )?.[0]?.node?.value ?? "[]"
+        ({ node }) => node?.key === 'similar'
+      )?.[0]?.node?.value ?? '[]'
     );
     setSelectedOptions(similarProductsRulesFromQuery);
     setToBeSubmittedSpecificationRules(
-      (previousToBeSubmittedSpecificationRules) => {
-        return {
-          ...previousToBeSubmittedSpecificationRules,
-          ...specificationRulesFromQuery,
-        };
-      }
+      (previousToBeSubmittedSpecificationRules) => ({
+        ...previousToBeSubmittedSpecificationRules,
+        ...specificationRulesFromQuery,
+      })
     );
   }, [dataWithShopDtmMetafields]);
   const handleLabelValueChanged = (value) => {
@@ -100,16 +98,16 @@ const Settings = () => {
     setNameValue(slugify(value, { lower: true }));
   };
   const handleOptionsValueChanged = (value) => {
-    setOptionsValue(value.trim() === "" ? [] : value.split(","));
+    setOptionsValue(value.trim() === '' ? [] : value.split(','));
   };
   const handleSpecificationRulesFormSubmitted = async () => {
     try {
       const newMetafield = await axios
-        .post("/createMetafield", {
-          key: "info",
-          namespace: "dtm",
-          owner_resource: "shop",
-          value_type: "json_string",
+        .post('/createMetafield', {
+          key: 'info',
+          namespace: 'dtm',
+          owner_resource: 'shop',
+          value_type: 'json_string',
           value: JSON.stringify(toBeSubmittedSpecificationRules),
         })
         .then((response) => response.data);
@@ -122,21 +120,21 @@ const Settings = () => {
           },
         },
       });
-      setToastContent("Changes saved");
+      setToastContent('Changes saved');
       setToastActive(true);
     } catch (err) {
-      setToastContent("Failed to save changes");
+      setToastContent('Failed to save changes');
       setToastActive(true);
     }
   };
   const handleSimilarProductsFormSubmitted = async () => {
     try {
       const newMetafield = await axios
-        .post("/createMetafield", {
-          key: "similar",
-          namespace: "dtm",
-          owner_resource: "shop",
-          value_type: "json_string",
+        .post('/createMetafield', {
+          key: 'similar',
+          namespace: 'dtm',
+          owner_resource: 'shop',
+          value_type: 'json_string',
           value: JSON.stringify(selectedOptions),
         })
         .then((response) => response.data);
@@ -149,10 +147,10 @@ const Settings = () => {
           },
         },
       });
-      setToastContent("Changes saved");
+      setToastContent('Changes saved');
       setToastActive(true);
     } catch (err) {
-      setToastContent("Failed to save changes");
+      setToastContent('Failed to save changes');
       setToastActive(true);
     }
   };
@@ -173,68 +171,57 @@ const Settings = () => {
   };
   const handleSpecificationRuleAdderButtonClicked = () => {
     setToBeSubmittedSpecificationRules(
-      (previousToBeSubmittedSpecificationRules) => {
-        return {
-          ...previousToBeSubmittedSpecificationRules,
-          [nameValue]: {
-            label: labelValue,
-            name: nameValue,
-            position: positionValue,
-            type: typeValue,
-            options: optionsValue.map((option) => option.trim()),
-          },
-        };
-      }
+      (previousToBeSubmittedSpecificationRules) => ({
+        ...previousToBeSubmittedSpecificationRules,
+        [nameValue]: {
+          label: labelValue,
+          name: nameValue,
+          position: positionValue,
+          type: typeValue,
+          options: optionsValue.map((option) => option.trim()),
+        },
+      })
     );
     resetSpecificationRuleAdderInputs();
   };
   const handleSpecificationRuleRemoverButtonClicked = (nameToRemove) => {
     setToBeSubmittedSpecificationRules(
-      (previousToBeSubmittedSpecificationRules) => {
-        return pickBy(
+      (previousToBeSubmittedSpecificationRules) =>
+        pickBy(
           previousToBeSubmittedSpecificationRules,
           (rule, name) => name !== nameToRemove
-        );
-      }
+        )
     );
   };
   const handleSpecificationRuleChanged = (oldRule, newRule) => {
     setToBeSubmittedSpecificationRules(
-      (previousToBeSubmittedSpecificationRules) => {
-        return {
-          ...pickBy(
-            previousToBeSubmittedSpecificationRules,
-            (rule, name) => oldRule.name !== rule.name
-          ),
-          [newRule.name]: {
-            label: newRule.label,
-            name: newRule.name,
-            position: newRule.position,
-            type: newRule.type,
-            options: newRule.options.map((option) => option.trim()),
-          },
-        };
-      }
+      (previousToBeSubmittedSpecificationRules) => ({
+        ...pickBy(
+          previousToBeSubmittedSpecificationRules,
+          (rule) => oldRule.name !== rule.name
+        ),
+        [newRule.name]: {
+          label: newRule.label,
+          name: newRule.name,
+          position: newRule.position,
+          type: newRule.type,
+          options: newRule.options.map((option) => option.trim()),
+        },
+      })
     );
   };
 
   const updateText = useCallback(
     (value) => {
       setInputValue(value);
-
-      if (value === "") {
+      if (value === '') {
         setOptions(deselectedOptions);
         return;
       }
-
-      const filterRegex = new RegExp(value, "i");
+      const filterRegex = new RegExp(value, 'i');
       const resultOptions = deselectedOptions.filter((option) =>
         option.label.match(filterRegex)
       );
-      let endIndex = resultOptions.length - 1;
-      if (resultOptions.length === 0) {
-        endIndex = 0;
-      }
       setOptions(resultOptions);
     },
     [deselectedOptions]
@@ -242,9 +229,9 @@ const Settings = () => {
 
   const removeTag = useCallback(
     (tag) => () => {
-      const options = [...selectedOptions];
-      options.splice(options.indexOf(tag), 1);
-      setSelectedOptions(options);
+      const newOptions = [...selectedOptions];
+      newOptions.splice(newOptions.indexOf(tag), 1);
+      setSelectedOptions(newOptions);
     },
     [selectedOptions]
   );
@@ -273,6 +260,40 @@ const Settings = () => {
       duration={2000}
     />
   ) : null;
+
+  const typeSelector =
+    positionValue === 'tag' ? (
+      <Select
+        label="Type"
+        options={[
+          { label: 'Text', value: 'text' },
+          { label: 'Number', value: 'number' },
+          { label: 'Checkbox', value: 'checkbox' },
+          { label: 'Select', value: 'select' },
+        ]}
+        value={typeValue}
+        onChange={setTypeValue}
+      />
+    ) : (
+      <Select
+        label="Type"
+        options={[{ label: 'Textarea', value: 'textarea' }]}
+        value={typeValue}
+        onChange={setTypeValue}
+      />
+    );
+
+  const optionsInput =
+    typeValue === 'select' ? (
+      <Stack.Item fill>
+        <TextField
+          label="Options"
+          value={optionsValue.join(',')}
+          onChange={handleOptionsValueChanged}
+        />
+      </Stack.Item>
+    ) : null;
+
   return (
     <Page fullWidth title="Settings">
       <Layout>
@@ -317,49 +338,18 @@ const Settings = () => {
                     <Select
                       label="Position"
                       options={[
-                        { label: "Tag", value: "tag" },
-                        { label: "Metafield", value: "metafield" },
+                        { label: 'Tag', value: 'tag' },
+                        { label: 'Metafield', value: 'metafield' },
                       ]}
                       value={positionValue}
                       onChange={setPositionValue}
                     />
                   </Stack.Item>
-                  <Stack.Item fill>
-                    {positionValue === "tag" ? (
-                      <Select
-                        label="Type"
-                        options={[
-                          { label: "Text", value: "text" },
-                          { label: "Number", value: "number" },
-                          { label: "Checkbox", value: "checkbox" },
-                          { label: "Select", value: "select" },
-                        ]}
-                        value={typeValue}
-                        onChange={setTypeValue}
-                      />
-                    ) : (
-                      <Select
-                        label="Type"
-                        options={[{ label: "Textarea", value: "textarea" }]}
-                        value={typeValue}
-                        onChange={setTypeValue}
-                      />
-                    )}
-                  </Stack.Item>
-                  {typeValue === "select" ? (
-                    <Stack.Item fill>
-                      <TextField
-                        label="Options"
-                        value={optionsValue.join(",")}
-                        onChange={handleOptionsValueChanged}
-                      />
-                    </Stack.Item>
-                  ) : null}
-                  <Stack.Item>
-                    <Button onClick={handleSpecificationRuleAdderButtonClicked}>
-                      Add
-                    </Button>
-                  </Stack.Item>
+                  <Stack.Item fill>{typeSelector}</Stack.Item>
+                  {optionsInput}
+                  <Button onClick={handleSpecificationRuleAdderButtonClicked}>
+                    Add
+                  </Button>
                 </Stack>
               </FormLayout>
             </Card>

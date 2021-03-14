@@ -1,17 +1,16 @@
-import { Select } from "@shopify/polaris";
-import { useState } from "react";
+import { Select } from '@shopify/polaris';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
 
-function EditProductSelect(props) {
-  const [selected, setSelected] = useState(() => {
-    return props?.value ?? props?.options?.[0] ?? null;
-  });
+function EditProductSelect({ label, name, value, options }) {
+  const [selected, setSelected] = useState(() => value ?? options?.[0] ?? null);
   return (
     <Select
-      name={props.name}
-      label={props.label}
+      name={name}
+      label={label}
       options={[
-        { label: "N/A", value: "" },
-        ...props.options.map((option) => ({
+        { label: 'N/A', value: '' },
+        ...options.map((option) => ({
           label: option,
           value: option,
         })),
@@ -21,5 +20,12 @@ function EditProductSelect(props) {
     />
   );
 }
+
+EditProductSelect.propTypes = {
+  label: PropTypes.string,
+  name: PropTypes.string,
+  options: PropTypes.arrayOf(PropTypes.string),
+  value: PropTypes.string,
+};
 
 export default EditProductSelect;

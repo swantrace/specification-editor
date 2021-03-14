@@ -4,13 +4,13 @@ import {
   InMemoryCache,
   ApolloLink,
   HttpLink,
-} from "@apollo/client";
-import App from "next/app";
-import { AppProvider, Frame } from "@shopify/polaris";
-import { Provider } from "@shopify/app-bridge-react";
-import "@shopify/polaris/dist/styles.css";
-import translations from "@shopify/polaris/locales/en.json";
-import "../styles.css";
+} from '@apollo/client';
+import App from 'next/app';
+import { AppProvider, Frame } from '@shopify/polaris';
+import { Provider } from '@shopify/app-bridge-react';
+import '@shopify/polaris/dist/styles.css';
+import translations from '@shopify/polaris/locales/en.json';
+import '../styles.css';
 
 const client = new ApolloClient({
   cache: new InMemoryCache({
@@ -35,7 +35,7 @@ const client = new ApolloClient({
       }
       return response;
     })
-  ).concat(new HttpLink({ uri: "/graphql" })),
+  ).concat(new HttpLink({ uri: '/graphql' })),
 });
 class MyApp extends App {
   render() {
@@ -45,7 +45,7 @@ class MyApp extends App {
         <Provider
           config={{
             apiKey: API_KEY,
-            shopOrigin: shopOrigin,
+            shopOrigin,
             forceRedirect: true,
           }}
         >
@@ -60,10 +60,8 @@ class MyApp extends App {
   }
 }
 
-MyApp.getInitialProps = async ({ ctx }) => {
-  return {
-    shopOrigin: ctx.query.shop,
-  };
-};
+MyApp.getInitialProps = async ({ ctx }) => ({
+  shopOrigin: ctx.query.shop,
+});
 
 export default MyApp;

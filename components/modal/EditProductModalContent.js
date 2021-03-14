@@ -1,10 +1,11 @@
-import EditProductCheckbox from "./EditProductCheckbox";
-import EditProductSelect from "./EditProductSelect";
-import EditProductText from "./EditProductText";
-import EditProductTextArea from "./EditProductTextArea";
-import EditProductNumber from "./EditProductNumber";
-import { Form, FormLayout, Stack, Select, Button } from "@shopify/polaris";
-import { useState } from "react";
+import { Form, FormLayout, Stack, Select, Button } from '@shopify/polaris';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
+import EditProductCheckbox from './EditProductCheckbox';
+import EditProductSelect from './EditProductSelect';
+import EditProductText from './EditProductText';
+import EditProductTextArea from './EditProductTextArea';
+import EditProductNumber from './EditProductNumber';
 
 function EditProductModalContent({
   storedSpecifications,
@@ -16,27 +17,22 @@ function EditProductModalContent({
   ] = useState([]);
 
   const [selectedSpecificationName, setSelectedSpecificationName] = useState(
-    () => {
-      return nonstoredSpecifications?.[0]?.name ?? null;
-    }
+    () => nonstoredSpecifications?.[0]?.name ?? null
   );
 
   const handleSpecificationAdderButtonClicked = () => {
-    setToBeAddedSpecificationNames((previousToBeAddedSpecificationNames) => {
-      return [
-        ...previousToBeAddedSpecificationNames,
-        selectedSpecificationName,
-      ];
-    });
-    setSelectedSpecificationName((previousSelectedSpecificationName) => {
-      return (
+    setToBeAddedSpecificationNames((previousToBeAddedSpecificationNames) => [
+      ...previousToBeAddedSpecificationNames,
+      selectedSpecificationName,
+    ]);
+    setSelectedSpecificationName(
+      (previousSelectedSpecificationName) =>
         nonstoredSpecifications.filter(
           (specification) =>
             !toBeAddedSpecificationNames.includes(specification.name) &&
             specification.name !== previousSelectedSpecificationName
-        )?.[0]?.name ?? ""
-      );
-    });
+        )?.[0]?.name ?? ''
+    );
   };
 
   const specificationInputs = (
@@ -47,42 +43,36 @@ function EditProductModalContent({
           toBeAddedSpecificationNames.includes(specification.name)
         ),
       ].map((specification) => {
-        console.log("specification", specification);
+        console.log('specification', specification);
         switch (specification.type) {
-          case "select":
+          case 'select':
             return (
               <EditProductSelect key={specification.name} {...specification} />
             );
-            break;
-          case "text":
+          case 'text':
             return (
               <EditProductText key={specification.name} {...specification} />
             );
-            break;
-          case "textarea":
+          case 'textarea':
             return (
               <EditProductTextArea
                 key={specification.name}
                 {...specification}
               />
             );
-            break;
-          case "number":
+          case 'number':
             return (
               <EditProductNumber key={specification.name} {...specification} />
             );
-            break;
-          case "checkbox":
+          case 'checkbox':
             return (
               <EditProductCheckbox
                 key={specification.name}
                 {...specification}
               />
             );
-            break;
           default:
             return null;
-            break;
         }
       })}
     </FormLayout>
@@ -106,9 +96,7 @@ function EditProductModalContent({
             onChange={setSelectedSpecificationName}
           />
         </Stack.Item>
-        <Stack.Item>
-          <Button onClick={handleSpecificationAdderButtonClicked}>Add</Button>
-        </Stack.Item>
+        <Button onClick={handleSpecificationAdderButtonClicked}>Add</Button>
       </Stack>
     </FormLayout>
   );
@@ -120,5 +108,10 @@ function EditProductModalContent({
     </Form>
   );
 }
+
+EditProductModalContent.propTypes = {
+  storedSpecifications: PropTypes.object,
+  nonstoredSpecifications: PropTypes.object,
+};
 
 export default EditProductModalContent;

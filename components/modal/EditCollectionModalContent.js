@@ -1,22 +1,16 @@
-import {
-  Form,
-  FormLayout,
-  Stack,
-  Select,
-  Button,
-  TextField,
-} from "@shopify/polaris";
-import { useState } from "react";
-import EditCollectionImageInfoInputs from "./EditCollectionImageInfoInputs";
+import { Form, FormLayout, Stack, Button, TextField } from '@shopify/polaris';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
+import EditCollectionImageInfoInputs from './EditCollectionImageInfoInputs';
 
 function EditCollectionModalContent({ modalEditingCollection }) {
-  const [imageUrl, setImageUrl] = useState("");
-  const [imageText, setImageText] = useState("");
-  const [imageTarget, setImageTarget] = useState("");
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageText, setImageText] = useState('');
+  const [imageTarget, setImageTarget] = useState('');
   const [collectionImageInfoArray, setCollectionImageInfoArray] = useState(
     () => {
       const images =
-        JSON.parse(modalEditingCollection?.metafield?.value ?? "{}")?.images ??
+        JSON.parse(modalEditingCollection?.metafield?.value ?? '{}')?.images ??
         [];
       return images;
     }
@@ -26,21 +20,19 @@ function EditCollectionModalContent({ modalEditingCollection }) {
 
   const handleCollectionImageInfoAdderButtonClicked = () => {
     if (imageUrl && imageTarget && imageText) {
-      setCollectionImageInfoArray((previousCollectionImageInfoArray) => {
-        return [
-          ...previousCollectionImageInfoArray,
-          { imageUrl, imageTarget, imageText },
-        ];
-      });
-      setImageUrl("");
-      setImageTarget("");
-      setImageText("");
+      setCollectionImageInfoArray((previousCollectionImageInfoArray) => [
+        ...previousCollectionImageInfoArray,
+        { imageUrl, imageTarget, imageText },
+      ]);
+      setImageUrl('');
+      setImageTarget('');
+      setImageText('');
     }
   };
   const handleCollectionImageInfoRemoveButtonClicked = (index) => {
-    setCollectionImageInfoArray((previousCollectionImageInfoArray) => {
-      return previousCollectionImageInfoArray.filter((e, i) => i !== index);
-    });
+    setCollectionImageInfoArray((previousCollectionImageInfoArray) =>
+      previousCollectionImageInfoArray.filter((e, i) => i !== index)
+    );
   };
 
   const collectionImageInfoEditor = (
@@ -49,6 +41,7 @@ function EditCollectionModalContent({ modalEditingCollection }) {
         <EditCollectionImageInfoInputs
           imageInfo={imageInfo}
           imageIndex={index}
+          key={JSON.stringify({ ...imageInfo, index })}
           handleCollectionImageInfoRemoveButtonClicked={
             handleCollectionImageInfoRemoveButtonClicked
           }
@@ -84,11 +77,9 @@ function EditCollectionModalContent({ modalEditingCollection }) {
             value={imageText}
           />
         </Stack.Item>
-        <Stack.Item>
-          <Button onClick={handleCollectionImageInfoAdderButtonClicked}>
-            Add
-          </Button>
-        </Stack.Item>
+        <Button onClick={handleCollectionImageInfoAdderButtonClicked}>
+          Add
+        </Button>
       </Stack>
     </FormLayout>
   );
@@ -96,11 +87,15 @@ function EditCollectionModalContent({ modalEditingCollection }) {
   return (
     <Form>
       <Stack vertical>
-        <Stack.Item>{collectionImageInfoEditor}</Stack.Item>
-        <Stack.Item>{collectionImageInfoAdder}</Stack.Item>
+        <Stack.Item fill>{collectionImageInfoEditor}</Stack.Item>
+        <Stack.Item fill>{collectionImageInfoAdder}</Stack.Item>
       </Stack>
     </Form>
   );
 }
+
+EditCollectionModalContent.propTypes = {
+  modalEditingCollection: PropTypes.object,
+};
 
 export default EditCollectionModalContent;

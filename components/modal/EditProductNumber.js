@@ -1,19 +1,25 @@
-import { TextField } from "@shopify/polaris";
-import { useState } from "react";
+import { TextField } from '@shopify/polaris';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
 
-function EditProductNumber(props) {
-  const [value, setValue] = useState(() => {
-    return props?.value ?? "";
-  });
+function EditProductNumber({ label, name, type, value }) {
+  const [number, setNumber] = useState(() => value ?? '');
   return (
     <TextField
-      name={props.name}
-      label={props.label}
-      type={props.type}
-      value={value}
-      onChange={setValue}
+      name={name}
+      label={label}
+      type={type}
+      value={number}
+      onChange={setNumber}
     />
   );
 }
+
+EditProductNumber.propTypes = {
+  label: PropTypes.string,
+  name: PropTypes.string,
+  type: PropTypes.string,
+  value: PropTypes.string,
+};
 
 export default EditProductNumber;

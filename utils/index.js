@@ -1,6 +1,6 @@
-import merge from "lodash.merge";
-import groupBy from "lodash.groupby";
-import deepcopy from "deepcopy";
+import merge from 'lodash.merge';
+import groupBy from 'lodash.groupby';
+import deepcopy from 'deepcopy';
 
 export const getProductSpecificationInfoWithValues = (
   product,
@@ -9,14 +9,17 @@ export const getProductSpecificationInfoWithValues = (
   const copiedSpecificationInfo = deepcopy(specificationInfo);
   const existingSpecificationTagKeyValuePairs =
     product?.tags
-      ?.map((tag) => tag.split("_"))
-      ?.filter((parts) => parts[0] === "dtm" && parts[1] != undefined)
+      ?.map((tag) => tag.split('_'))
+      ?.filter(
+        (parts) =>
+          parts[0] === 'dtm' && (parts[1] !== undefined || parts[1] !== null)
+      )
       ?.reduce((acc, parts) => {
-        acc[parts[1]] = { value: parts[2] ?? "TRUE" };
+        acc[parts[1]] = { value: parts[2] ?? 'TRUE' };
         return acc;
       }, {}) ?? {};
   const existingSpecificationMetafieldKeyValuePairs = Object.entries(
-    JSON.parse(product?.metafield?.value ?? "{}")
+    JSON.parse(product?.metafield?.value ?? '{}')
   ).reduce((acc, [key, value]) => {
     acc[key] = { value };
     return acc;
@@ -37,7 +40,7 @@ export const getViewProductsTableInfo = (products, specificationInfo) => {
   const rows = [];
   products.forEach((product, productIndex) => {
     rows[productIndex] = [];
-    rows[productIndex][0] = product.title ?? "";
+    rows[productIndex][0] = product.title ?? '';
     const productSpecificationInfoWithValues = getProductSpecificationInfoWithValues(
       product,
       specificationInfo
@@ -51,13 +54,13 @@ export const getViewProductsTableInfo = (products, specificationInfo) => {
   });
   return {
     columnContentTypes: [
-      "text",
+      'text',
       ...Object.values(productsSpecificationInfoWithValues).map((info) =>
-        info.type === "number" ? "numeric" : "text"
+        info.type === 'number' ? 'numeric' : 'text'
       ),
     ],
     headings: [
-      "Title",
+      'Title',
       ...Object.values(productsSpecificationInfoWithValues).map(
         (info) => info.label
       ),
@@ -97,7 +100,7 @@ export const getModalEditingProductUpdateInfo = (
 
   const updateInfo = Object.entries(specificationInfoWithValuesMerged).reduce(
     (acc, [specificationName, specificationProps]) => {
-      if (specificationProps.position === "tag") {
+      if (specificationProps.position === 'tag') {
         if (
           specificationProps.value &&
           (!toBeSubmittedValues[specificationName] ||
@@ -106,14 +109,14 @@ export const getModalEditingProductUpdateInfo = (
           acc.tagsToRemove = [
             ...acc.tagsToRemove,
             `dtm_${specificationName}${
-              specificationProps.type === "checkbox"
-                ? ""
+              specificationProps.type === 'checkbox'
+                ? ''
                 : `_${specificationProps.value}`
             }`,
           ];
         }
         if (
-          specificationProps.type !== "checkbox" &&
+          specificationProps.type !== 'checkbox' &&
           toBeSubmittedValues[specificationName] &&
           (!specificationProps.value ||
             specificationProps.value !== toBeSubmittedValues[specificationName])
@@ -124,16 +127,16 @@ export const getModalEditingProductUpdateInfo = (
           ];
         }
         if (
-          specificationProps.type === "checkbox" &&
-          (toBeSubmittedValues[specificationName] ?? "").toUpperCase() ===
-            "TRUE" &&
+          specificationProps.type === 'checkbox' &&
+          (toBeSubmittedValues[specificationName] ?? '').toUpperCase() ===
+            'TRUE' &&
           (!specificationProps.value ||
             specificationProps.value !== toBeSubmittedValues[specificationName])
         ) {
           acc.tagsToAdd = [...acc.tagsToAdd, `dtm_${specificationName}`];
         }
       }
-      if (specificationProps.position === "metafield") {
+      if (specificationProps.position === 'metafield') {
         if (
           specificationProps.value &&
           !toBeSubmittedValues[specificationName]
@@ -147,7 +150,7 @@ export const getModalEditingProductUpdateInfo = (
           acc.metafieldIsChanged = true;
           acc.metafieldToUpdate[specificationName] = toBeSubmittedValues[
             specificationName
-          ].split("\n");
+          ].split('\n');
         }
         if (
           specificationProps.value &&
@@ -155,13 +158,13 @@ export const getModalEditingProductUpdateInfo = (
         ) {
           if (
             JSON.stringify(
-              toBeSubmittedValues[specificationName].split("\n")
+              toBeSubmittedValues[specificationName].split('\n')
             ) !== JSON.stringify(specificationProps.value)
           ) {
             acc.metafieldIsChanged = true;
             acc.metafieldToUpdate[specificationName] = toBeSubmittedValues[
               specificationName
-            ].split("\n");
+            ].split('\n');
           }
         }
       }
@@ -171,7 +174,7 @@ export const getModalEditingProductUpdateInfo = (
       tagsToRemove: [],
       tagsToAdd: [],
       metafieldIsChanged: false,
-      metafieldToUpdate: JSON.parse(product?.metafield?.value ?? "{}"),
+      metafieldToUpdate: JSON.parse(product?.metafield?.value ?? '{}'),
     }
   );
   return updateInfo;
@@ -186,14 +189,14 @@ export const getProductInfoToExport = (product, specificationInfo) => {
     specificationInfoWithValuesMerged
   ).reduce((acc, [specificationName, specificationProps]) => {
     if (specificationProps.value) {
-      if (typeof specificationProps.value === "string") {
+      if (typeof specificationProps.value === 'string') {
         acc[specificationName] = specificationProps.value;
       }
       if (specificationProps.value instanceof Array) {
-        acc[specificationName] = specificationProps.value.join("\n");
+        acc[specificationName] = specificationProps.value.join('\n');
       }
     } else {
-      acc[specificationName] = "";
+      acc[specificationName] = '';
     }
     return acc;
   }, {});
@@ -205,37 +208,37 @@ export const getProductInfoToExport = (product, specificationInfo) => {
   return productInfoToExport;
 };
 
-export const addslashes = (str) => {
-  return (str + "").replace(/([\\"'])/g, "\\$1").replace(/\0/g, "\\0");
-};
+export const addslashes = (str) =>
+  `${str}`.replace(/([\\"'])/g, '\\$1').replace(/\0/g, '\\0');
 
-export const titleCase = (string) => {
-  return string
+export const titleCase = (string) =>
+  string
     .toLowerCase()
-    .split(" ")
+    .split(' ')
     .map((word) => word.replace(word[0], word[0].toUpperCase()))
-    .join("");
-};
+    .join('');
 
 export const getDownloadLink = (blob, filename) => {
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
+  const a = document.createElement('a');
   a.href = url;
-  a.download = filename || "download";
-  const clickHandler = function () {
+  a.download = filename || 'download';
+  const clickHandler = function clickHandler() {
     setTimeout(() => {
-      // Release the object URL
       URL.revokeObjectURL(url);
-
-      // Remove the event listener from the anchor element
-      this.removeEventListener("click", clickHandler);
-
-      // Remove the anchor element from the DOM
-      (this.remove && (this.remove(), 1)) ||
-        (this.parentNode && this.parentNode.removeChild(this));
+      this.removeEventListener('click', clickHandler);
+      if (this.remove && typeof this.remove === 'function') {
+        this.remove();
+      }
+      if (
+        this.parentNode &&
+        typeof this.parentNode.removeChild === 'function'
+      ) {
+        this.parentNode.removeChild(this);
+      }
     }, 150);
   };
-  a.addEventListener("click", clickHandler, false);
+  a.addEventListener('click', clickHandler, false);
   return a;
 };
 
@@ -264,14 +267,14 @@ export const getProductInputPayload = (
   };
 
   if (metafieldIsChanged) {
-    input["metafields"] = {
-      key: "info",
-      namespace: "dtm",
-      valueType: "JSON_STRING",
+    input.metafields = {
+      key: 'info',
+      namespace: 'dtm',
+      valueType: 'JSON_STRING',
       value: JSON.stringify(metafieldToUpdate),
     };
     if (product?.metafield?.id) {
-      input["metafields"]["id"] = product.metafield.id;
+      input.metafields.id = product.metafield.id;
     }
   }
   return input;

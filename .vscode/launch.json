@@ -12,5 +12,11 @@
       "program": "${workspaceFolder}/server/index.js",
       "port": 9229
     }
-  ]
+  ],
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "prettier.packageManager": "yarn"
 }

@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, useRef } from "react";
-import { gql, useApolloClient, useMutation, useQuery } from "@apollo/client";
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { gql, useApolloClient, useMutation, useQuery } from '@apollo/client';
 import {
   Card,
   Modal,
@@ -11,8 +11,8 @@ import {
   ButtonGroup,
   Pagination,
   TextStyle,
-} from "@shopify/polaris";
-import EditCollectionModalContent from "./modal/EditCollectionModalContent";
+} from '@shopify/polaris';
+import EditCollectionModalContent from './modal/EditCollectionModalContent';
 
 const GET_COLLECTIONS = gql`
   query getCollections {
@@ -130,22 +130,20 @@ function ResourceListWithCollections({ setToastActive, setToastContent }) {
   };
 
   const handleModalConfirmButtonClicked = async () => {
-    const form = modalContentWrapperRef.current.querySelector("form");
+    const form = modalContentWrapperRef.current.querySelector('form');
     const toBeSubmittedImageInfoArray = Array.from(form.elements)
       .filter(
         (element) =>
           element.name &&
-          (element.name.includes("imageUrl") ||
-            element.name.includes("imageTarget") ||
-            element.name.includes("imageText"))
+          (element.name.includes('imageUrl') ||
+            element.name.includes('imageTarget') ||
+            element.name.includes('imageText'))
       )
-      .map(({ name, value }) => {
-        return {
-          index: name.split("_")[0],
-          name: name.split("_")[1],
-          value: value,
-        };
-      })
+      .map(({ name, value }) => ({
+        index: name.split('_')[0],
+        name: name.split('_')[1],
+        value,
+      }))
       .reduce((acc, cur) => {
         acc[cur.index] = acc[cur.index] ?? {};
         acc[cur.index][cur.name] = cur.value;
@@ -155,9 +153,9 @@ function ResourceListWithCollections({ setToastActive, setToastContent }) {
     const input = {
       id: modalEditingCollection.id,
       metafields: {
-        key: "info",
-        namespace: "dtm",
-        valueType: "JSON_STRING",
+        key: 'info',
+        namespace: 'dtm',
+        valueType: 'JSON_STRING',
         value: JSON.stringify({ images: toBeSubmittedImageInfoArray }),
       },
     };
@@ -169,10 +167,10 @@ function ResourceListWithCollections({ setToastActive, setToastContent }) {
     try {
       await updateCollection({ variables: { input } });
       setToastActive(true);
-      setToastContent("Changes saved");
+      setToastContent('Changes saved');
     } catch (err) {
       setToastActive(true);
-      setToastContent("Failed to save changes");
+      setToastContent('Failed to save changes');
     }
     setModalEditingCollection(null);
     setModalOpen(false);
@@ -198,12 +196,12 @@ function ResourceListWithCollections({ setToastActive, setToastContent }) {
         onClose={handleModalCloseIconClicked}
         title="Edit collection images"
         primaryAction={{
-          content: "Confirm",
+          content: 'Confirm',
           onAction: handleModalConfirmButtonClicked,
         }}
         secondaryActions={[
           {
-            content: "Cancel",
+            content: 'Cancel',
             onAction: handleModalCancelButtonClicked,
           },
         ]}
@@ -217,7 +215,7 @@ function ResourceListWithCollections({ setToastActive, setToastContent }) {
         </Modal.Section>
       </Modal>
       <ResourceList
-        resourceName={{ singular: "Collection", plural: "Collections" }}
+        resourceName={{ singular: 'Collection', plural: 'Collections' }}
         loading={loading}
         items={dataWithCollections?.collections?.edges ?? []}
         renderItem={({ node: collection }) => {
@@ -225,9 +223,9 @@ function ResourceListWithCollections({ setToastActive, setToastContent }) {
             <Thumbnail
               source={
                 collection?.image?.originalSrc ??
-                "/collection_image_placeholder.png"
+                '/collection_image_placeholder.png'
               }
-              alt={collection?.image?.altText ?? ""}
+              alt={collection?.image?.altText ?? ''}
               size="small"
             />
           );
@@ -258,9 +256,9 @@ function ResourceListWithCollections({ setToastActive, setToastContent }) {
             </ResourceItem>
           );
         }}
-      ></ResourceList>
+      />
       <hr style={{ marginBottom: 0 }} />
-      <div style={{ padding: "15px 0" }}>
+      <div style={{ padding: '15px 0' }}>
         <Stack
           alignment="center"
           distribution="center"

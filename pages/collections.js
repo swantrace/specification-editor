@@ -1,10 +1,10 @@
-import { Page, Layout, Toast } from "@shopify/polaris";
-import { useState } from "react";
-import ResourceListWithCollections from "../components/ResourceListWithCollections";
+import { Page, Layout, Toast } from '@shopify/polaris';
+import { useState } from 'react';
+import ResourceListWithCollections from '../components/ResourceListWithCollections';
 
 const Collections = () => {
   const [toastActive, setToastActive] = useState(false);
-  const [toastContent, setToastContent] = useState("");
+  const [toastContent, setToastContent] = useState('');
   const toastMarkup = toastActive ? (
     <Toast
       content={toastContent}

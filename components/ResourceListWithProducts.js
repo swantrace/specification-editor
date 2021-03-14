@@ -1,12 +1,12 @@
-import { useState, useCallback, useEffect, useRef } from "react";
-import { gql, useApolloClient, useMutation, useQuery } from "@apollo/client";
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { gql, useApolloClient, useMutation, useQuery } from '@apollo/client';
+import PropTypes from 'prop-types';
 import {
   Card,
   ResourceItem,
   ResourceList,
   Stack,
   TextStyle,
-  TextField,
   Filters,
   ButtonGroup,
   Button,
@@ -16,24 +16,20 @@ import {
   Modal,
   RadioButton,
   TextContainer,
-  Form,
-  FormLayout,
   DropZone,
   DataTable,
-  Select,
-} from "@shopify/polaris";
-import EditProductModalContent from "./modal/EditProductModalContent";
+} from '@shopify/polaris';
+import axios from 'axios';
+import { parse } from 'json2csv';
+import EditProductModalContent from './modal/EditProductModalContent';
 import {
   addslashes,
   getDownloadLink,
-  getModalEditingProductUpdateInfo,
   getProductInfoToExport,
   getProductInputPayload,
   getSpecificationGroups,
   getViewProductsTableInfo,
-} from "../utils";
-import axios from "axios";
-import { parse } from "json2csv";
+} from '../utils';
 
 const GET_PRODUCTS = gql`
   query getProducts(
@@ -230,18 +226,14 @@ function ResourceListWithProducts({
   modalStatusFromImportOrExport,
   setModalStatusFromImportOrExport,
 }) {
-  //#region
   const client = useApolloClient();
   const [productTypeValue, setProductTypeValue] = useState([]);
   const [productVendorValue, setProductVendorValue] = useState([]);
-  const [queryValue, setQueryValue] = useState("");
-  const [sortValue, setSortValule] = useState("TITLE_ASC");
+  const [queryValue, setQueryValue] = useState('');
+  const [sortValue, setSortValule] = useState('TITLE_ASC');
   const [selectedItems, setSelectedItems] = useState([]);
-  // import: 1, export: 2, view: 3, edit: 4
   const [modalStatus, setModalStatus] = useState(0);
-  // const [modalTitle, setModalTitle] = useState(null);
-  // const [modalContent, setModalContent] = useState(null);
-  const [modalExportScope, setModalExportScope] = useState("all");
+  const [modalExportScope, setModalExportScope] = useState('all');
   const [modalExportIsWorking, setModalExportIsWorking] = useState(false);
   const [modalFileDialogOpened, setModalFileDialogOpened] = useState(false);
   const [modalImportedFile, setModalImportedFile] = useState(null);
@@ -260,11 +252,66 @@ function ResourceListWithProducts({
   const [updateProduct] = useMutation(UPDATE_PRODUCT);
   const { data: dataWithShopInfo } = useQuery(GET_SHOP_INFO);
   const specificationInfo = JSON.parse(
-    dataWithShopInfo?.shop?.metafield?.value ?? "{}"
+    dataWithShopInfo?.shop?.metafield?.value ?? '{}'
   );
 
+  const queryString =
+    queryValue.trim() === ''
+      ? `*`
+      : `"${addslashes(
+          queryValue.trim().split(' ').length > 1
+            ? queryValue.trim().split(' ').slice(0, -1).join(' ')
+            : queryValue.trim()
+        )}*"`;
+  const queryValuePart = `sku:${queryString} OR barcode:${queryString} OR title:${queryString}`;
+
+  const productTypePart =
+    productTypeValue.length === 0
+      ? ''
+      : productTypeValue.reduce((acc, cur) => {
+          let productTypeQueryString = acc;
+          if (productTypeQueryString === '') {
+            productTypeQueryString = ` AND product_type:${cur}`;
+          } else {
+            productTypeQueryString += ` OR product_type:${cur}`;
+          }
+          return productTypeQueryString;
+        }, '');
+
+  const productVendorPart =
+    productVendorValue.length === 0
+      ? ''
+      : productVendorValue.reduce((acc, cur) => {
+          let productVendorQueryString = acc;
+          if (productVendorQueryString === '') {
+            productVendorQueryString = ` AND vendor:${cur}`;
+          } else {
+            productVendorQueryString += ` OR vendor:${cur}`;
+          }
+          return productVendorQueryString;
+        }, '');
+
+  const { loading, data: dataWithProducts, refetch, fetchMore } = useQuery(
+    GET_PRODUCTS,
+    {
+      variables: {
+        first: 50,
+        query: `${queryValuePart}${productTypePart}${productVendorPart}`,
+        reverse: !!sortValue.includes('DESC'),
+        sortKey: sortValue.replace('_DESC', '').replace('_ASC', ''),
+      },
+    }
+  );
+
+  const hasPrevious =
+    dataWithProducts?.products?.pageInfo?.hasPreviousPage ?? false;
+  const hasNext = dataWithProducts?.products?.pageInfo?.hasNextPage ?? false;
+  const lastCursor =
+    dataWithProducts?.products?.edges?.slice(-1)?.[0]?.cursor ?? null;
+  const firstCursor = dataWithProducts?.products?.edges?.[0]?.cursor ?? null;
+
   const resetModal = () => {
-    setModalExportScope("all");
+    setModalExportScope('all');
     setModalFileDialogOpened(false);
     setModalImportedFile(null);
     setModalEditingProduct(null);
@@ -288,12 +335,10 @@ function ResourceListWithProducts({
   };
 
   const handleModalDropZoneAccepted = (files) => {
-    console.log("files: ", files);
     setModalImportedFile(files?.[0] ?? null);
   };
 
   const handleViewButtonClicked = async () => {
-    console.log("selectedItems", selectedItems);
     const promiseArray = selectedItems.map((id) =>
       client
         .query({ query: GET_PRODUCT, variables: { id } })
@@ -326,11 +371,11 @@ function ResourceListWithProducts({
       setModalImportIsWorking(true);
       try {
         const formData = new FormData();
-        formData.append("csv", modalImportedFile);
+        formData.append('csv', modalImportedFile);
         const productsFromCSV = await axios
-          .post("/importCSV", formData, {
+          .post('/importCSV', formData, {
             headers: {
-              "Content-Type": "multipart/form-data",
+              'Content-Type': 'multipart/form-data',
             },
           })
           .then((response) => response.data);
@@ -338,17 +383,16 @@ function ResourceListWithProducts({
         setModalImportLeftProductsCount(countOfProductsToUpdate);
         let availablePointsCount = 1000;
         let index = 0;
-        for (const productFromCSV of productsFromCSV) {
-          index++;
+        productsFromCSV.forEach(async (productFromCSV) => {
+          index += 1;
           const { id } = productFromCSV;
           if (id) {
             if (index % 5 === 0) {
               const queryForProduct = await client.query({
                 query: GET_PRODUCT,
                 variables: { id },
-                fetchPolicy: "no-cache",
+                fetchPolicy: 'no-cache',
               });
-              console.log("queryForProduct: ", queryForProduct);
               const dataWithProductFromQuery = queryForProduct.data;
               availablePointsCount =
                 dataWithProductFromQuery.extensions.cost.throttleStatus
@@ -377,7 +421,7 @@ function ResourceListWithProducts({
                 .query({
                   query: GET_PRODUCT,
                   variables: { id },
-                  fetchPolicy: "no-cache",
+                  fetchPolicy: 'no-cache',
                 })
                 .then(async (queryForProduct) => {
                   const dataWithProductFromQuery = queryForProduct.data;
@@ -410,14 +454,12 @@ function ResourceListWithProducts({
                 }, 1000);
               });
             }
-            console.log("availablePointsCount", availablePointsCount);
-            console.log("index", index);
             setModalImportLeftProductsCount(countOfProductsToUpdate - index);
           }
-        }
+        });
 
         setToastActive(true);
-        setToastContent("File imported");
+        setToastContent('File imported');
       } catch (err) {
         setToastActive(true);
         setToastContent(err.message);
@@ -427,59 +469,57 @@ function ResourceListWithProducts({
     if (modalStatus === 2) {
       try {
         setModalExportIsWorking(true);
-        const { data, extensions } = await client.mutate({
+        const { data } = await client.mutate({
           mutation: GET_PRODUCTS_IN_BULK,
         });
-        console.log("data, extension:", data, extensions);
         if ((data?.bulkOperationRunQuery?.userErrors?.length ?? 0) > 0) {
           throw new Error(
             data.bulkOperationRunQuery.userErrors.map((error) => error.message)
           );
         }
         const bulkOperationCompleted = () =>
-          new Promise((resolve, reject) => {
+          new Promise((resolve) => {
             const interval = setInterval(async () => {
-              const { data } = await client.query({
+              const { data: dataWithBulkOperationInfo } = await client.query({
                 query: GET_BULK_OPERATION_INFO,
-                fetchPolicy: "network-only",
+                fetchPolicy: 'network-only',
               });
-              if (data.currentBulkOperation.status === "COMPLETED") {
+              if (
+                dataWithBulkOperationInfo.currentBulkOperation.status ===
+                'COMPLETED'
+              ) {
                 clearInterval(interval);
-                resolve(data.currentBulkOperation.url);
+                resolve(dataWithBulkOperationInfo.currentBulkOperation.url);
               }
             }, 2000);
           });
 
         const url = await bulkOperationCompleted();
         const rawExportedData = await axios
-          .get("/getFile", { params: { url } })
+          .get('/getFile', { params: { url } })
           .then((response) => response.data);
 
         const targetJSON = rawExportedData
           .filter((product) => {
             switch (modalExportScope) {
-              case "all":
+              case 'all':
                 return true;
-                break;
-              case "page":
+              case 'page':
                 return (dataWithProducts?.products?.edges ?? [])
                   ?.map(({ node }) => node.id)
                   .includes(product.id);
-                break;
-              case "selected":
+              case 'selected':
                 return selectedItems.includes(product.id);
               default:
-                break;
+                return false;
             }
           })
-          .map((product) => {
-            return getProductInfoToExport(product, specificationInfo);
-          });
+          .map((product) => getProductInfoToExport(product, specificationInfo));
         const targetCSV = parse(targetJSON);
-        const blob = new Blob([targetCSV], { type: "text/csv" });
+        const blob = new Blob([targetCSV], { type: 'text/csv' });
         const now = new Date();
         const fileName = `${now.toDateString()} ${
-          now.toTimeString().split(" ")[0]
+          now.toTimeString().split(' ')[0]
         }.csv`;
         const csvLink = getDownloadLink(blob, fileName);
         csvLink.click();
@@ -490,8 +530,7 @@ function ResourceListWithProducts({
     }
 
     if (modalStatus === 4) {
-      console.log(modalContentWrapperRef.current);
-      const form = modalContentWrapperRef.current.querySelector("form");
+      const form = modalContentWrapperRef.current.querySelector('form');
       const toBeSubmittedValues = Array.from(form.elements)
         .filter((element) => element.name)
         .reduce((acc, element) => {
@@ -505,13 +544,12 @@ function ResourceListWithProducts({
           modalEditingProduct,
           specificationInfo
         );
-        console.log("edit product update iput: ", input, "\n");
         await updateProduct({ variables: { input } });
         setToastActive(true);
-        setToastContent("Changes saved");
+        setToastContent('Changes saved');
       } catch (err) {
         setToastActive(true);
-        setToastContent("Failed to save changes");
+        setToastContent('Failed to save changes');
       }
     }
     resetModal();
@@ -526,76 +564,19 @@ function ResourceListWithProducts({
   };
 
   const handleClearAll = useCallback(() => {
-    setQueryValue("");
+    setQueryValue('');
     setProductTypeValue([]);
     setProductVendorValue([]);
   }, [setQueryValue, setProductTypeValue, setProductVendorValue]);
 
-  //#endregion
-  const queryString =
-    queryValue.trim() === ""
-      ? `*`
-      : `"${addslashes(
-          queryValue.trim().split(" ").length > 1
-            ? queryValue.trim().split(" ").slice(0, -1).join(" ")
-            : queryValue.trim()
-        )}*"`;
-  const queryValuePart = `sku:${queryString} OR barcode:${queryString} OR title:${queryString}`;
-
-  const productTypePart =
-    productTypeValue.length === 0
-      ? ""
-      : productTypeValue.reduce((acc, cur) => {
-          if (acc === "") {
-            acc = ` AND product_type:${cur}`;
-          } else {
-            acc += ` OR product_type:${cur}`;
-          }
-          return acc;
-        }, "");
-
-  const productVendorPart =
-    productVendorValue.length === 0
-      ? ""
-      : productVendorValue.reduce((acc, cur) => {
-          if (acc === "") {
-            acc = ` AND vendor:${cur}`;
-          } else {
-            acc += ` OR vendor:${cur}`;
-          }
-          return acc;
-        }, "");
-
-  const {
-    loading,
-    error,
-    data: dataWithProducts,
-    refetch,
-    fetchMore,
-  } = useQuery(GET_PRODUCTS, {
-    variables: {
-      first: 50,
-      query: `${queryValuePart}${productTypePart}${productVendorPart}`,
-      reverse: sortValue.includes("DESC") ? true : false,
-      sortKey: sortValue.replace("_DESC", "").replace("_ASC", ""),
-    },
-  });
-
-  const hasPrevious =
-    dataWithProducts?.products?.pageInfo?.hasPreviousPage ?? false;
-  const hasNext = dataWithProducts?.products?.pageInfo?.hasNextPage ?? false;
-  const lastCursor =
-    dataWithProducts?.products?.edges?.slice(-1)?.[0]?.cursor ?? null;
-  const firstCursor = dataWithProducts?.products?.edges?.[0]?.cursor ?? null;
-
   useEffect(() => {
     refetch();
-  }, [queryValue, productTypeValue, productVendorValue, sortValue]);
+  }, [queryValue, productTypeValue, productVendorValue, sortValue, refetch]);
 
   const filters = [
     {
-      key: "productType",
-      label: "Product type",
+      key: 'productType',
+      label: 'Product type',
       filter: (
         <ChoiceList
           allowMultiple
@@ -613,8 +594,8 @@ function ResourceListWithProducts({
       shortcut: true,
     },
     {
-      key: "productVendor",
-      label: "Product vendor",
+      key: 'productVendor',
+      label: 'Product vendor',
       filter: (
         <ChoiceList
           allowMultiple
@@ -639,10 +620,10 @@ function ResourceListWithProducts({
     if (acc.length === 0) {
       acc[0] = {};
     }
-    acc[0].key ??= "productVendor";
+    acc[0].key ??= 'productVendor';
     acc[0].onRemove ??= () => setProductVendorValue([]);
     if (acc[0].label) {
-      acc[0].label = `${acc[0].label.replace("is", "contains")}, ${vendor}`;
+      acc[0].label = `${acc[0].label.replace('is', 'contains')}, ${vendor}`;
     } else {
       acc[0].label = `Product vendor is ${vendor}`;
     }
@@ -653,10 +634,10 @@ function ResourceListWithProducts({
     if (acc.length === 0) {
       acc[0] = {};
     }
-    acc[0].key ??= "productType";
+    acc[0].key ??= 'productType';
     acc[0].onRemove ??= () => setProductTypeValue([]);
     if (acc[0].label) {
-      acc[0].label = `${acc[0].label.replace("is", "contains")}, ${type}`;
+      acc[0].label = `${acc[0].label.replace('is', 'contains')}, ${type}`;
     } else {
       acc[0].label = `Product type is ${type}`;
     }
@@ -665,8 +646,6 @@ function ResourceListWithProducts({
 
   const appliedFilters = [...vendorAppliedFilter, ...typeAppliedFilter];
 
-  if (error) return <p>{JSON.stringify(error)}</p>;
-
   const filterControl = (
     <Filters
       queryPlaceholder="Please enter one product's title, sku or barcode"
@@ -674,52 +653,54 @@ function ResourceListWithProducts({
       filters={filters}
       appliedFilters={appliedFilters}
       onQueryChange={setQueryValue}
-      onQueryClear={() => setQueryValue("")}
+      onQueryClear={() => setQueryValue('')}
       onClearAll={handleClearAll}
-    ></Filters>
+    />
   );
 
   const promotedBulkActions = [
     {
-      content: "View specifications",
+      content: 'View specifications',
       onAction: handleViewButtonClicked,
     },
   ];
 
   let modalContent = null;
-  let modalTitle = "";
+  let modalTitle = '';
   switch (modalStatus) {
-    case 0:
+    case 0: {
       break;
-    case 1:
-      modalTitle = "Import product specifications by CSV";
+    }
+    case 1: {
+      modalTitle = 'Import product specifications by CSV';
+      const progressStatus =
+        modalImportLeftProductsCount !== null
+          ? `${modalImportLeftProductsCount} products left to update`
+          : null;
+      const replaceFileButton = modalImportedFile ? (
+        <Stack alignment="center">
+          <Stack.Item fill>{modalImportedFile.name}</Stack.Item>
+          <Button onClick={() => setModalFileDialogOpened(true)}>
+            Replace file
+          </Button>
+        </Stack>
+      ) : null;
+      const dropZoneWrapperStyle = modalImportedFile ? { display: 'none' } : {};
       modalContent = modalImportIsWorking ? (
         <TextContainer>
           <Stack alignment="center" distribution="center">
             <Stack.Item fill>
               <TextStyle>
-                Import is Working, please don't close the modal until it is
-                finished.{" "}
-                {modalImportLeftProductsCount !== null
-                  ? `${modalImportLeftProductsCount} products left to update`
-                  : null}
+                Import is working, please don&#39;t close the modal until it is
+                finished.{progressStatus}
               </TextStyle>
             </Stack.Item>
           </Stack>
         </TextContainer>
       ) : (
         <>
-          {modalImportedFile ? (
-            <Stack alignment="center">
-              <Stack.Item fill>{modalImportedFile.name}</Stack.Item>
-              <Stack.Item>
-                <Button onClick={() => setModalFileDialogOpened(true)}>
-                  Replace file
-                </Button>
-              </Stack.Item>
-            </Stack>
-          ) : null}
-          <div style={modalImportedFile ? { display: "none" } : {}}>
+          {replaceFileButton}
+          <div style={dropZoneWrapperStyle}>
             <DropZone
               allowMultiple={false}
               openFileDialog={modalFileDialogOpened}
@@ -734,14 +715,15 @@ function ResourceListWithProducts({
         </>
       );
       break;
-    case 2:
-      modalTitle = "Export product specifications";
+    }
+    case 2: {
+      modalTitle = 'Export product specifications';
       modalContent = modalExportIsWorking ? (
         <TextContainer>
           <Stack alignment="center" distribution="center">
             <Stack.Item fill>
               <TextStyle>
-                Export is Working, please don't close the modal until it is
+                Export is working, please don&#39;t close the modal until it is
                 finished
               </TextStyle>
             </Stack.Item>
@@ -750,7 +732,7 @@ function ResourceListWithProducts({
       ) : (
         <Stack vertical>
           <RadioButton
-            checked={modalExportScope === "all"}
+            checked={modalExportScope === 'all'}
             label="All products"
             id="all"
             value="all"
@@ -758,7 +740,7 @@ function ResourceListWithProducts({
             onChange={handleModalExportScopeChanged}
           />
           <RadioButton
-            checked={modalExportScope === "page"}
+            checked={modalExportScope === 'page'}
             label="Current page"
             id="page"
             value="page"
@@ -766,7 +748,7 @@ function ResourceListWithProducts({
             onChange={handleModalExportScopeChanged}
           />
           <RadioButton
-            checked={modalExportScope === "selected"}
+            checked={modalExportScope === 'selected'}
             label={`Selected: ${selectedItems.length} products`}
             id="selected"
             value="selected"
@@ -776,7 +758,8 @@ function ResourceListWithProducts({
         </Stack>
       );
       break;
-    case 3:
+    }
+    case 3: {
       modalTitle = "Selected product's specifications";
       modalContent = (
         <DataTable
@@ -786,8 +769,8 @@ function ResourceListWithProducts({
         />
       );
       break;
-    case 4:
-      console.log("case 4", modalEditingProduct);
+    }
+    case 4: {
       modalTitle = "Edit the product's specifications";
       const {
         storedSpecifications,
@@ -801,8 +784,10 @@ function ResourceListWithProducts({
         />
       );
       break;
-    default:
+    }
+    default: {
       break;
+    }
   }
 
   return (
@@ -813,12 +798,12 @@ function ResourceListWithProducts({
         onClose={handleModalCloseIconClicked}
         title={modalTitle}
         primaryAction={{
-          content: "Confirm",
+          content: 'Confirm',
           onAction: handleModalConfirmButtonClicked,
         }}
         secondaryActions={[
           {
-            content: "Cancel",
+            content: 'Cancel',
             onAction: handleModalCancelButtonClicked,
           },
         ]}
@@ -830,23 +815,23 @@ function ResourceListWithProducts({
         </Modal.Section>
       </Modal>
       <ResourceList
-        resourceName={{ singular: "Product", plural: "Products" }}
+        resourceName={{ singular: 'Product', plural: 'Products' }}
         loading={loading}
         filterControl={filterControl}
         sortValue={sortValue}
         sortOptions={[
-          { label: "Product title A-Z", value: "TITLE_ASC" },
-          { label: "Product title Z-A", value: "TITLE_DESC" },
-          { label: "Created (oldest first)", value: "CREATED_AT_ASC" },
-          { label: "Created (newest first)", value: "CREATED_AT_DESC" },
-          { label: "Updated (oldest first)", value: "UPDATED_AT_ASC" },
-          { label: "Updated (newest first)", value: "UPDATED_AT_DESC" },
-          { label: "Low inventory", value: "INVENTORY_TOTAL_ASC" },
-          { label: "High inventory", value: "INVENTORY_TOTAL_DESC" },
-          { label: "Product type A-Z", value: "PRODUCT_TYPE_ASC" },
-          { label: "Product type Z-A", value: "PRODUCT_TYPE_DESC" },
-          { label: "Vendor A-Z", value: "VENDOR_ASC" },
-          { label: "Vendor Z-A", value: "VENDOR_DESC" },
+          { label: 'Product title A-Z', value: 'TITLE_ASC' },
+          { label: 'Product title Z-A', value: 'TITLE_DESC' },
+          { label: 'Created (oldest first)', value: 'CREATED_AT_ASC' },
+          { label: 'Created (newest first)', value: 'CREATED_AT_DESC' },
+          { label: 'Updated (oldest first)', value: 'UPDATED_AT_ASC' },
+          { label: 'Updated (newest first)', value: 'UPDATED_AT_DESC' },
+          { label: 'Low inventory', value: 'INVENTORY_TOTAL_ASC' },
+          { label: 'High inventory', value: 'INVENTORY_TOTAL_DESC' },
+          { label: 'Product type A-Z', value: 'PRODUCT_TYPE_ASC' },
+          { label: 'Product type Z-A', value: 'PRODUCT_TYPE_DESC' },
+          { label: 'Vendor A-Z', value: 'VENDOR_ASC' },
+          { label: 'Vendor Z-A', value: 'VENDOR_DESC' },
         ]}
         onSortChange={setSortValule}
         selectable
@@ -860,9 +845,9 @@ function ResourceListWithProducts({
             <Thumbnail
               source={
                 item?.featuredImage?.originalSrc ??
-                "/product_image_placeholder.png"
+                '/product_image_placeholder.png'
               }
-              alt={item?.featuredImage?.altText ?? ""}
+              alt={item?.featuredImage?.altText ?? ''}
               size="small"
             />
           );
@@ -880,20 +865,18 @@ function ResourceListWithProducts({
                   </h3>
                   <h6>{item.id}</h6>
                 </Stack.Item>
-                <Stack.Item>
-                  <ButtonGroup>
-                    <Button onClick={() => handleEditButtonClicked(item.id)}>
-                      Edit
-                    </Button>
-                  </ButtonGroup>
-                </Stack.Item>
+                <ButtonGroup>
+                  <Button onClick={() => handleEditButtonClicked(item.id)}>
+                    Edit
+                  </Button>
+                </ButtonGroup>
               </Stack>
             </ResourceItem>
           );
         }}
-      ></ResourceList>
+      />
       <hr style={{ marginBottom: 0 }} />
-      <div style={{ padding: "15px 0" }}>
+      <div style={{ padding: '15px 0' }}>
         <Stack
           alignment="center"
           distribution="center"
@@ -926,5 +909,12 @@ function ResourceListWithProducts({
     </Card>
   );
 }
+
+ResourceListWithProducts.propTypes = {
+  setToastActive: PropTypes.func,
+  setToastContent: PropTypes.func,
+  modalStatusFromImportOrExport: PropTypes.number,
+  setModalStatusFromImportOrExport: PropTypes.func,
+};
 
 export default ResourceListWithProducts;

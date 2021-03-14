@@ -1,27 +1,20 @@
-import { Select, Stack, TextField, Button } from "@shopify/polaris";
-import { useState } from "react";
-import slugify from "slugify";
+import { Select, Stack, TextField, Button } from '@shopify/polaris';
+import { useState } from 'react';
+import slugify from 'slugify';
+import PropTypes from 'prop-types';
 
 function SettingRuleInputs({
   rule,
   handleSpecificationRuleRemoverButtonClicked,
   handleSpecificationRuleChanged,
 }) {
-  const [labelValue, setLabelValue] = useState(() => {
-    return rule?.label ?? "";
-  });
-  const [nameValue, setNameValue] = useState(() => {
-    return rule?.name ?? "";
-  });
-  const [positionValue, setPositionValue] = useState(() => {
-    return rule?.position ?? "tag";
-  });
-  const [typeValue, setTypeValue] = useState(() => {
-    return rule?.type ?? "text";
-  });
-  const [optionsValue, setOptionsValue] = useState(() => {
-    return rule?.options ?? [];
-  });
+  const [labelValue, setLabelValue] = useState(() => rule?.label ?? '');
+  const [nameValue, setNameValue] = useState(() => rule?.name ?? '');
+  const [positionValue, setPositionValue] = useState(
+    () => rule?.position ?? 'tag'
+  );
+  const [typeValue, setTypeValue] = useState(() => rule?.type ?? 'text');
+  const [optionsValue, setOptionsValue] = useState(() => rule?.options ?? []);
   const handleLabelValueChanged = (value) => {
     setLabelValue(value);
     setNameValue(slugify(value, { lower: true }));
@@ -54,7 +47,7 @@ function SettingRuleInputs({
     });
   };
   const handleTypeValueChanged = (value) => {
-    setPositionValue(value);
+    setTypeValue(value);
     handleSpecificationRuleChanged(rule, {
       label: labelValue,
       name: nameValue,
@@ -64,18 +57,51 @@ function SettingRuleInputs({
     });
   };
   const handleOptionsValueChanged = (value) => {
-    setOptionsValue(value.split(","));
+    setOptionsValue(value.split(','));
     handleSpecificationRuleChanged(rule, {
       label: labelValue,
       name: nameValue,
       position: positionValue,
       type: typeValue,
-      options: value.split(","),
+      options: value.split(','),
     });
   };
   const handleRemoveButtonClicked = () => {
     handleSpecificationRuleRemoverButtonClicked(rule.name);
   };
+  const typeSelector =
+    positionValue === 'tag' ? (
+      <Select
+        label="Type"
+        options={[
+          { label: 'Text', value: 'text' },
+          { label: 'Number', value: 'number' },
+          { label: 'Checkbox', value: 'checkbox' },
+          { label: 'Select', value: 'select' },
+        ]}
+        value={typeValue}
+        onChange={handleTypeValueChanged}
+      />
+    ) : (
+      <Select
+        label="Type"
+        options={[{ label: 'Textarea', value: 'textarea' }]}
+        value={typeValue}
+        onChange={handleTypeValueChanged}
+      />
+    );
+
+  const optionsInput =
+    typeValue === 'select' ? (
+      <Stack.Item fill>
+        <TextField
+          label="Options"
+          value={optionsValue.join(',')}
+          onChange={handleOptionsValueChanged}
+        />
+      </Stack.Item>
+    ) : null;
+
   return (
     <Stack alignment="trailing">
       <Stack.Item fill>
@@ -96,49 +122,24 @@ function SettingRuleInputs({
         <Select
           label="Position"
           options={[
-            { label: "Tag", value: "tag" },
-            { label: "Metafield", value: "metafield" },
+            { label: 'Tag', value: 'tag' },
+            { label: 'Metafield', value: 'metafield' },
           ]}
           value={positionValue}
           onChange={handlePositionValueChanged}
         />
       </Stack.Item>
-      <Stack.Item fill>
-        {positionValue === "tag" ? (
-          <Select
-            label="Type"
-            options={[
-              { label: "Text", value: "text" },
-              { label: "Number", value: "number" },
-              { label: "Checkbox", value: "checkbox" },
-              { label: "Select", value: "select" },
-            ]}
-            value={typeValue}
-            onChange={handleTypeValueChanged}
-          />
-        ) : (
-          <Select
-            label="Type"
-            options={[{ label: "Textarea", value: "textarea" }]}
-            value={typeValue}
-            onChange={handleTypeValueChanged}
-          />
-        )}
-      </Stack.Item>
-      {typeValue === "select" ? (
-        <Stack.Item fill>
-          <TextField
-            label="Options"
-            value={optionsValue.join(",")}
-            onChange={handleOptionsValueChanged}
-          />
-        </Stack.Item>
-      ) : null}
-      <Stack.Item>
-        <Button onClick={handleRemoveButtonClicked}>Remove</Button>
-      </Stack.Item>
+      <Stack.Item fill>{typeSelector}</Stack.Item>
+      {optionsInput}
+      <Button onClick={handleRemoveButtonClicked}>Remove</Button>
     </Stack>
   );
 }
+
+SettingRuleInputs.propTypes = {
+  rule: PropTypes.object,
+  handleSpecificationRuleRemoverButtonClicked: PropTypes.func,
+  handleSpecificationRuleChanged: PropTypes.func,
+};
 
 export default SettingRuleInputs;

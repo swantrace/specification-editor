@@ -1,20 +1,11 @@
-import { useEffect, useState } from "react";
-import {
-  EmptyState,
-  Layout,
-  Modal,
-  Page,
-  ButtonGroup,
-  Button,
-  Toast,
-} from "@shopify/polaris";
-import ResourceListWithProducts from "../components/ResourceListWithProducts";
-import axios from "axios";
+import { useState } from 'react';
+import { Layout, Page, ButtonGroup, Button, Toast } from '@shopify/polaris';
+import ResourceListWithProducts from '../components/ResourceListWithProducts';
 
 const Index = () => {
   const [modalStatus, setModalStatus] = useState(0);
   const [toastActive, setToastActive] = useState(false);
-  const [toastContent, setToastContent] = useState("");
+  const [toastContent, setToastContent] = useState('');
   const toastMarkup = toastActive ? (
     <Toast
       content={toastContent}
