@@ -535,7 +535,11 @@ function ResourceListWithProducts({
   const queryString =
     queryValue.trim() === ""
       ? `*`
-      : `"${addslashes(queryValue.trim().split(" ").slice(0, -1).join(" "))}*"`;
+      : `"${addslashes(
+          queryValue.trim().split(" ").length > 1
+            ? queryValue.trim().split(" ").slice(0, -1).join(" ")
+            : queryValue.trim()
+        )}*"`;
   const queryValuePart = `sku:${queryString} OR barcode:${queryString} OR title:${queryString}`;
 
   const productTypePart =
