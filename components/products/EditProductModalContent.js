@@ -109,8 +109,8 @@ function EditProductModalContent({
 }
 
 EditProductModalContent.propTypes = {
-  storedSpecifications: PropTypes.object,
-  nonstoredSpecifications: PropTypes.object,
+  storedSpecifications: PropTypes.arrayOf(PropTypes.object),
+  nonstoredSpecifications: PropTypes.arrayOf(PropTypes.object),
 };
 
 export default EditProductModalContent;

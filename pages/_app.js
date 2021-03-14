@@ -10,6 +10,7 @@ import { AppProvider, Frame } from '@shopify/polaris';
 import { Provider } from '@shopify/app-bridge-react';
 import '@shopify/polaris/dist/styles.css';
 import translations from '@shopify/polaris/locales/en.json';
+import ClientRouter from '../components/ClientRouter';
 import '../styles.css';
 
 const client = new ApolloClient({
@@ -48,6 +49,7 @@ class MyApp extends App {
             forceRedirect: true,
           }}
         >
+          <ClientRouter />
           <ApolloProvider client={client}>
             <Frame>
               <Component {...pageProps} />
