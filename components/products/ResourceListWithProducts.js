@@ -1,5 +1,8 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useContext } from 'react';
 import { gql, useApolloClient, useMutation, useQuery } from '@apollo/client';
+import { AppBridgeContext } from '@shopify/app-bridge-react/context';
+import { Redirect } from '@shopify/app-bridge/actions';
+
 import PropTypes from 'prop-types';
 import {
   Card,
@@ -14,9 +17,6 @@ import {
   Thumbnail,
   ChoiceList,
   Modal,
-  RadioButton,
-  TextContainer,
-  DropZone,
   DataTable,
 } from '@shopify/polaris';
 import axios from 'axios';
@@ -30,6 +30,9 @@ import {
   getSpecificationGroups,
   getViewProductsTableInfo,
 } from '../../utils';
+import ImportProductsModalContent from './ImportProductsModalContent';
+import ExportProductsModalContent from './ExportProductsModalContenta';
+import { useAppContext } from '../../context/state';
 
 const GET_PRODUCTS = gql`
   query getProducts(
@@ -54,6 +57,7 @@ const GET_PRODUCTS = gql`
         cursor
         node {
           id
+          handle
           title
           legacyResourceId
           featuredImage {
@@ -113,6 +117,7 @@ const GET_PRODUCT = gql`
   query getProduct($id: ID!) {
     product(id: $id) {
       id
+      handle
       title
       legacyResourceId
       metafield(key: "info", namespace: "dtm") {
@@ -134,6 +139,7 @@ const UPDATE_PRODUCT = gql`
     productUpdate(input: $input) {
       product {
         id
+        handle
         title
         legacyResourceId
         metafield(namespace: "dtm", key: "info") {
@@ -164,6 +170,7 @@ const GET_PRODUCTS_IN_BULK = gql`
             edges {
               node {
                 id
+                handle
                 title
                 legacyResourceId
                 metafield(key: "info", namespace: "dtm") {
@@ -227,6 +234,10 @@ function ResourceListWithProducts({
   setModalStatusFromImportOrExport,
 }) {
   const client = useApolloClient();
+  const app = useContext(AppBridgeContext);
+  const redirect = Redirect.create(app);
+  const sharedState = useAppContext();
+  const { shopOrigin } = sharedState;
   const [productTypeValue, setProductTypeValue] = useState([]);
   const [productVendorValue, setProductVendorValue] = useState([]);
   const [queryValue, setQueryValue] = useState('');
@@ -569,6 +580,20 @@ function ResourceListWithProducts({
     setProductVendorValue([]);
   }, [setQueryValue, setProductTypeValue, setProductVendorValue]);
 
+  const handleEditProductButtonClicked = (id) => {
+    redirect.dispatch(Redirect.Action.ADMIN_PATH, {
+      path: `/products/${id}`,
+      newContext: true,
+    });
+  };
+
+  const handleViewProductButtonClicked = (handle) => {
+    redirect.dispatch(Redirect.Action.REMOTE, {
+      url: `https://${shopOrigin}/products/${handle}`,
+      newContext: true,
+    });
+  };
+
   useEffect(() => {
     refetch();
   }, [queryValue, productTypeValue, productVendorValue, sortValue, refetch]);
@@ -673,89 +698,31 @@ function ResourceListWithProducts({
     }
     case 1: {
       modalTitle = 'Import product specifications by CSV';
-      const progressStatus =
-        modalImportLeftProductsCount !== null
-          ? `${modalImportLeftProductsCount} products left to update`
-          : null;
-      const replaceFileButton = modalImportedFile ? (
-        <Stack alignment="center">
-          <Stack.Item fill>{modalImportedFile.name}</Stack.Item>
-          <Button onClick={() => setModalFileDialogOpened(true)}>
-            Replace file
-          </Button>
-        </Stack>
-      ) : null;
-      const dropZoneWrapperStyle = modalImportedFile ? { display: 'none' } : {};
-      modalContent = modalImportIsWorking ? (
-        <TextContainer>
-          <Stack alignment="center" distribution="center">
-            <Stack.Item fill>
-              <TextStyle>
-                Import is working, please don&#39;t close the modal until it is
-                finished.{progressStatus}
-              </TextStyle>
-            </Stack.Item>
-          </Stack>
-        </TextContainer>
-      ) : (
-        <>
-          {replaceFileButton}
-          <div style={dropZoneWrapperStyle}>
-            <DropZone
-              allowMultiple={false}
-              openFileDialog={modalFileDialogOpened}
-              onDropAccepted={handleModalDropZoneAccepted}
-              onClick={() => setModalFileDialogOpened(true)}
-              onFileDialogClose={() => setModalFileDialogOpened(false)}
-              accept=".csv"
-            >
-              <DropZone.FileUpload />
-            </DropZone>
-          </div>
-        </>
+      modalContent = (
+        <ImportProductsModalContent
+          {...{
+            modalImportLeftProductsCount,
+            modalImportedFile,
+            modalImportIsWorking,
+            modalFileDialogOpened,
+            setModalFileDialogOpened,
+            handleModalDropZoneAccepted,
+          }}
+        />
       );
       break;
     }
     case 2: {
       modalTitle = 'Export product specifications';
-      modalContent = modalExportIsWorking ? (
-        <TextContainer>
-          <Stack alignment="center" distribution="center">
-            <Stack.Item fill>
-              <TextStyle>
-                Export is working, please don&#39;t close the modal until it is
-                finished
-              </TextStyle>
-            </Stack.Item>
-          </Stack>
-        </TextContainer>
-      ) : (
-        <Stack vertical>
-          <RadioButton
-            checked={modalExportScope === 'all'}
-            label="All products"
-            id="all"
-            value="all"
-            name="exportScope"
-            onChange={handleModalExportScopeChanged}
-          />
-          <RadioButton
-            checked={modalExportScope === 'page'}
-            label="Current page"
-            id="page"
-            value="page"
-            name="exportScope"
-            onChange={handleModalExportScopeChanged}
-          />
-          <RadioButton
-            checked={modalExportScope === 'selected'}
-            label={`Selected: ${selectedItems.length} products`}
-            id="selected"
-            value="selected"
-            name="exportScope"
-            onChange={handleModalExportScopeChanged}
-          />
-        </Stack>
+      modalContent = (
+        <ExportProductsModalContent
+          {...{
+            modalExportIsWorking,
+            modalExportScope,
+            selectedItems,
+            handleModalExportScopeChanged,
+          }}
+        />
       );
       break;
     }
@@ -866,8 +833,20 @@ function ResourceListWithProducts({
                   <h6>{item.id}</h6>
                 </Stack.Item>
                 <ButtonGroup>
+                  <Button
+                    onClick={() =>
+                      handleEditProductButtonClicked(item.legacyResourceId)
+                    }
+                  >
+                    Edit Product
+                  </Button>
+                  <Button
+                    onClick={() => handleViewProductButtonClicked(item.handle)}
+                  >
+                    View Product
+                  </Button>
                   <Button onClick={() => handleEditButtonClicked(item.id)}>
-                    Edit
+                    Edit Specification
                   </Button>
                 </ButtonGroup>
               </Stack>

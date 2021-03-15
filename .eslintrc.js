@@ -30,6 +30,7 @@ module.exports = {
       'error',
       { declaration: false, assignment: false },
     ],
+    'react/jsx-curly-newline': 'off',
   },
   overrides: [
     {

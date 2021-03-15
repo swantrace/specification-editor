@@ -12,6 +12,7 @@ import '@shopify/polaris/dist/styles.css';
 import translations from '@shopify/polaris/locales/en.json';
 import ClientRouter from '../components/ClientRouter';
 import '../styles.css';
+import { AppWrapper } from '../context/state';
 
 const client = new ApolloClient({
   cache: new InMemoryCache({
@@ -37,6 +38,7 @@ const client = new ApolloClient({
     })
   ).concat(new HttpLink({ uri: '/graphql' })),
 });
+
 class MyApp extends App {
   render() {
     const { Component, pageProps, shopOrigin } = this.props;
@@ -52,7 +54,9 @@ class MyApp extends App {
           <ClientRouter />
           <ApolloProvider client={client}>
             <Frame>
-              <Component {...pageProps} />
+              <AppWrapper shopOrigin={shopOrigin}>
+                <Component {...pageProps} />
+              </AppWrapper>
             </Frame>
           </ApolloProvider>
         </Provider>

@@ -210,22 +210,18 @@ const Settings = () => {
     );
   };
 
-  const updateText = useCallback(
-    (value) => {
-      setInputValue(value);
-      if (value === '') {
-        setOptions(deselectedOptions);
-        return;
-      }
-      const filterRegex = new RegExp(value, 'i');
-      const resultOptions = deselectedOptions.filter((option) =>
-        option.label.match(filterRegex)
-      );
-      setOptions(resultOptions);
-    },
-    [deselectedOptions]
-  );
-
+  const updateText = (value) => {
+    setInputValue(value);
+    if (value === '') {
+      setOptions(deselectedOptions);
+      return;
+    }
+    const filterRegex = new RegExp(value, 'i');
+    const resultOptions = deselectedOptions.filter((option) =>
+      option.label.match(filterRegex)
+    );
+    setOptions(resultOptions);
+  };
   const removeTag = useCallback(
     (tag) => () => {
       const newOptions = [...selectedOptions];

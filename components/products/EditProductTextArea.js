@@ -20,7 +20,7 @@ EditProductTextArea.propTypes = {
   label: PropTypes.string,
   name: PropTypes.string,
   type: PropTypes.string,
-  value: PropTypes.string,
+  value: PropTypes.arrayOf(PropTypes.string),
 };
 
 export default EditProductTextArea;
