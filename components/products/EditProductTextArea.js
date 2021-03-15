@@ -6,10 +6,9 @@ function EditProductTextArea({ label, name, value, type }) {
   const [text, setText] = useState(() => value?.join('\n') ?? '');
   return (
     <TextField
-      multiline
+      multiline={3}
       name={name}
       label={label}
-      type={type}
       value={text}
       onChange={setText}
     />
