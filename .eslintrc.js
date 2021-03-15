@@ -22,8 +22,8 @@ module.exports = {
     'react/react-in-jsx-scope': 'off',
     'import/no-unresolved': 'off',
     'no-underscore-dangle': ['error', { allow: ['__APOLLO_CLIENT__'] }],
-    'no-console': ['off'],
     'no-debugger': ['off'],
+    'no-console': ['off'],
     'import/extensions': 0,
     'prettier/prettier': ['error'],
     'react/jsx-wrap-multilines': [
