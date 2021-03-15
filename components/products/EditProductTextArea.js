@@ -3,6 +3,7 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 
 function EditProductTextArea({ label, name, value, type }) {
+  console.log('label, name, value, type', label, name, value, type);
   const [text, setText] = useState(() => value?.join('\n') ?? '');
   return (
     <TextField
