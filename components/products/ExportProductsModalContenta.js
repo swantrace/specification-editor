@@ -22,15 +22,23 @@ function ExportProductsModalContent({
     <Stack vertical>
       <RadioButton
         checked={modalExportScope === 'all'}
-        label="All products"
+        label="All the products in the store"
         id="all"
         value="all"
         name="exportScope"
         onChange={handleModalExportScopeChanged}
       />
       <RadioButton
+        checked={modalExportScope === 'filtered'}
+        label="All the products that meet the current filter conditions"
+        id="filtered"
+        value="filtered"
+        name="exportScope"
+        onChange={handleModalExportScopeChanged}
+      />
+      <RadioButton
         checked={modalExportScope === 'page'}
-        label="Current page"
+        label="All the products in the current page"
         id="page"
         value="page"
         name="exportScope"
@@ -38,7 +46,7 @@ function ExportProductsModalContent({
       />
       <RadioButton
         checked={modalExportScope === 'selected'}
-        label={`Selected: ${selectedItems.length} products`}
+        label={`All the selected: ${selectedItems.length} products`}
         id="selected"
         value="selected"
         name="exportScope"

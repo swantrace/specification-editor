@@ -279,3 +279,58 @@ export const getProductInputPayload = (
   }
   return input;
 };
+
+export const getQueryString = (
+  queryValue,
+  productTypeValue,
+  productVendorValue
+) => {
+  const queryValueString =
+    queryValue.trim() === ''
+      ? `*`
+      : `"${addslashes(
+          queryValue.trim().split(' ').length > 1
+            ? queryValue.trim().split(' ').slice(0, -1).join(' ')
+            : queryValue.trim()
+        )}*"`;
+  const queryValuePart = `sku:${queryValueString} OR barcode:${queryValueString} OR title:${queryValueString}`;
+
+  const addQuotesIfNecessary = (cur) => {
+    return cur.split(/\s+/).length > 1 ? `"${cur}"` : cur;
+  };
+  const productTypePart =
+    productTypeValue.length === 0
+      ? ''
+      : productTypeValue.reduce((acc, cur) => {
+          let productTypeQueryString = acc;
+          if (productTypeQueryString === '') {
+            productTypeQueryString = ` AND product_type:${addQuotesIfNecessary(
+              cur
+            )}`;
+          } else {
+            productTypeQueryString += ` OR product_type:${addQuotesIfNecessary(
+              cur
+            )}`;
+          }
+          return productTypeQueryString;
+        }, '');
+
+  const productVendorPart =
+    productVendorValue.length === 0
+      ? ''
+      : productVendorValue.reduce((acc, cur) => {
+          let productVendorQueryString = acc;
+          if (productVendorQueryString === '') {
+            productVendorQueryString = ` AND vendor:${addQuotesIfNecessary(
+              cur
+            )}`;
+          } else {
+            productVendorQueryString += ` OR vendor:${addQuotesIfNecessary(
+              cur
+            )}`;
+          }
+          return productVendorQueryString;
+        }, '');
+
+  return `${queryValuePart}${productTypePart}${productVendorPart}`;
+};

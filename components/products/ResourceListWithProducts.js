@@ -10,12 +10,10 @@ import {
   ResourceList,
   Stack,
   TextStyle,
-  Filters,
   ButtonGroup,
   Button,
   Pagination,
   Thumbnail,
-  ChoiceList,
   Modal,
   DataTable,
 } from '@shopify/polaris';
@@ -23,16 +21,17 @@ import axios from 'axios';
 import { parse } from 'json2csv';
 import EditProductModalContent from './EditProductModalContent';
 import {
-  addslashes,
   getDownloadLink,
   getProductInfoToExport,
   getProductInputPayload,
+  getQueryString,
   getSpecificationGroups,
   getViewProductsTableInfo,
 } from '../../utils';
 import ImportProductsModalContent from './ImportProductsModalContent';
 import ExportProductsModalContent from './ExportProductsModalContenta';
 import { useAppContext } from '../../context/state';
+import ProductsFilterControl from './ProductsFilterControl';
 
 const GET_PRODUCTS = gql`
   query getProducts(
@@ -162,33 +161,8 @@ const UPDATE_PRODUCT = gql`
 `;
 
 const GET_PRODUCTS_IN_BULK = gql`
-  mutation bulkOperationRunQuery {
-    bulkOperationRunQuery(
-      query: """
-      {
-          products {
-            edges {
-              node {
-                id
-                handle
-                title
-                legacyResourceId
-                metafield(key: "info", namespace: "dtm") {
-                  id
-                  key
-                  legacyResourceId
-                  namespace
-                  value
-                  valueType
-                  ownerType
-                }
-                tags
-              }
-            }
-          }
-        }
-      """
-    ) {
+  mutation bulkOperationRunQuery($query: String!) {
+    bulkOperationRunQuery(query: $query) {
       bulkOperation {
         id
         completedAt
@@ -266,60 +240,29 @@ function ResourceListWithProducts({
     dataWithShopInfo?.shop?.metafield?.value ?? '{}'
   );
 
-  const queryString =
-    queryValue.trim() === ''
-      ? `*`
-      : `"${addslashes(
-          queryValue.trim().split(' ').length > 1
-            ? queryValue.trim().split(' ').slice(0, -1).join(' ')
-            : queryValue.trim()
-        )}*"`;
-  const queryValuePart = `sku:${queryString} OR barcode:${queryString} OR title:${queryString}`;
-
-  const productTypePart =
-    productTypeValue.length === 0
-      ? ''
-      : productTypeValue.reduce((acc, cur) => {
-          let productTypeQueryString = acc;
-          if (productTypeQueryString === '') {
-            productTypeQueryString = ` AND product_type:${cur}`;
-          } else {
-            productTypeQueryString += ` OR product_type:${cur}`;
-          }
-          return productTypeQueryString;
-        }, '');
-
-  const productVendorPart =
-    productVendorValue.length === 0
-      ? ''
-      : productVendorValue.reduce((acc, cur) => {
-          let productVendorQueryString = acc;
-          if (productVendorQueryString === '') {
-            productVendorQueryString = ` AND vendor:${cur}`;
-          } else {
-            productVendorQueryString += ` OR vendor:${cur}`;
-          }
-          return productVendorQueryString;
-        }, '');
-
   const { loading, data: dataWithProducts, refetch, fetchMore } = useQuery(
     GET_PRODUCTS,
     {
       variables: {
         first: 50,
-        query: `${queryValuePart}${productTypePart}${productVendorPart}`,
+        query: `${getQueryString(
+          queryValue,
+          productTypeValue,
+          productVendorValue
+        )}`,
         reverse: !!sortValue.includes('DESC'),
         sortKey: sortValue.replace('_DESC', '').replace('_ASC', ''),
       },
     }
   );
 
-  const hasPrevious =
-    dataWithProducts?.products?.pageInfo?.hasPreviousPage ?? false;
-  const hasNext = dataWithProducts?.products?.pageInfo?.hasNextPage ?? false;
-  const lastCursor =
-    dataWithProducts?.products?.edges?.slice(-1)?.[0]?.cursor ?? null;
-  const firstCursor = dataWithProducts?.products?.edges?.[0]?.cursor ?? null;
+  useEffect(() => {
+    refetch();
+  }, [queryValue, productTypeValue, productVendorValue, sortValue, refetch]);
+
+  useEffect(() => {
+    setModalStatus(modalStatusFromImportOrExport);
+  }, [modalStatusFromImportOrExport]);
 
   const resetModal = () => {
     setModalExportScope('all');
@@ -336,10 +279,6 @@ function ResourceListWithProducts({
     setModalStatus(0);
     setModalStatusFromImportOrExport(0);
   };
-
-  useEffect(() => {
-    setModalStatus(modalStatusFromImportOrExport);
-  }, [modalStatusFromImportOrExport]);
 
   const handleModalExportScopeChanged = (_checked, value) => {
     setModalExportScope(value);
@@ -480,8 +419,42 @@ function ResourceListWithProducts({
     if (modalStatus === 2) {
       try {
         setModalExportIsWorking(true);
+        const productsQueryString =
+          modalExportScope !== 'filtered'
+            ? `"*"`
+            : `"${getQueryString(
+                queryValue,
+                productTypeValue,
+                productVendorValue
+              )}"`;
+
         const { data } = await client.mutate({
           mutation: GET_PRODUCTS_IN_BULK,
+          variables: {
+            query: `
+            {
+              products(query: ${productsQueryString}) {
+                edges {
+                  node {
+                    id
+                    handle
+                    title
+                    legacyResourceId
+                    metafield(key: "info", namespace: "dtm") {
+                      id
+                      key
+                      legacyResourceId
+                      namespace
+                      value
+                      valueType
+                      ownerType
+                    }
+                    tags
+                  }
+                }
+              }
+            }`,
+          },
         });
         if ((data?.bulkOperationRunQuery?.userErrors?.length ?? 0) > 0) {
           throw new Error(
@@ -513,16 +486,23 @@ function ResourceListWithProducts({
         const targetJSON = rawExportedData
           .filter((product) => {
             switch (modalExportScope) {
-              case 'all':
+              case 'all': {
                 return true;
-              case 'page':
+              }
+              case 'filtered': {
+                return true;
+              }
+              case 'page': {
                 return (dataWithProducts?.products?.edges ?? [])
                   ?.map(({ node }) => node.id)
                   .includes(product.id);
-              case 'selected':
+              }
+              case 'selected': {
                 return selectedItems.includes(product.id);
-              default:
+              }
+              default: {
                 return false;
+              }
             }
           })
           .map((product) => getProductInfoToExport(product, specificationInfo));
@@ -594,99 +574,13 @@ function ResourceListWithProducts({
     });
   };
 
-  useEffect(() => {
-    refetch();
-  }, [queryValue, productTypeValue, productVendorValue, sortValue, refetch]);
-
-  const filters = [
-    {
-      key: 'productType',
-      label: 'Product type',
-      filter: (
-        <ChoiceList
-          allowMultiple
-          title=""
-          choices={
-            dataWithShopInfo?.shop?.productTypes?.edges?.map((typeEdge) => ({
-              label: typeEdge.node,
-              value: typeEdge.node,
-            })) ?? []
-          }
-          selected={productTypeValue}
-          onChange={setProductTypeValue}
-        />
-      ),
-      shortcut: true,
-    },
-    {
-      key: 'productVendor',
-      label: 'Product vendor',
-      filter: (
-        <ChoiceList
-          allowMultiple
-          title=""
-          choices={
-            dataWithShopInfo?.shop?.productVendors?.edges?.map(
-              (vendorEdge) => ({
-                label: vendorEdge.node,
-                value: vendorEdge.node,
-              })
-            ) ?? []
-          }
-          selected={productVendorValue}
-          onChange={setProductVendorValue}
-        />
-      ),
-      shortcut: true,
-    },
-  ];
-
-  const vendorAppliedFilter = productVendorValue.reduce((acc, vendor) => {
-    if (acc.length === 0) {
-      acc[0] = {};
-    }
-    acc[0].key ??= 'productVendor';
-    acc[0].onRemove ??= () => setProductVendorValue([]);
-    if (acc[0].label) {
-      acc[0].label = `${acc[0].label.replace('is', 'contains')}, ${vendor}`;
-    } else {
-      acc[0].label = `Product vendor is ${vendor}`;
-    }
-    return acc;
-  }, []);
-
-  const typeAppliedFilter = productTypeValue.reduce((acc, type) => {
-    if (acc.length === 0) {
-      acc[0] = {};
-    }
-    acc[0].key ??= 'productType';
-    acc[0].onRemove ??= () => setProductTypeValue([]);
-    if (acc[0].label) {
-      acc[0].label = `${acc[0].label.replace('is', 'contains')}, ${type}`;
-    } else {
-      acc[0].label = `Product type is ${type}`;
-    }
-    return acc;
-  }, []);
-
-  const appliedFilters = [...vendorAppliedFilter, ...typeAppliedFilter];
-
-  const filterControl = (
-    <Filters
-      queryPlaceholder="Please enter one product's title, sku or barcode"
-      queryValue={queryValue}
-      filters={filters}
-      appliedFilters={appliedFilters}
-      onQueryChange={setQueryValue}
-      onQueryClear={() => setQueryValue('')}
-      onClearAll={handleClearAll}
-    />
-  );
-
   const promotedBulkActions = [
     {
       content: 'View specifications',
       onAction: handleViewButtonClicked,
+      paginatedSelectAllAction: (...args) => {
+        console.log(args);
+      },
     },
   ];
 
@@ -757,6 +651,13 @@ function ResourceListWithProducts({
     }
   }
 
+  const hasPrevious =
+    dataWithProducts?.products?.pageInfo?.hasPreviousPage ?? false;
+  const hasNext = dataWithProducts?.products?.pageInfo?.hasNextPage ?? false;
+  const lastCursor =
+    dataWithProducts?.products?.edges?.slice(-1)?.[0]?.cursor ?? null;
+  const firstCursor = dataWithProducts?.products?.edges?.[0]?.cursor ?? null;
+
   return (
     <Card>
       <Modal
@@ -784,7 +685,20 @@ function ResourceListWithProducts({
       <ResourceList
         resourceName={{ singular: 'Product', plural: 'Products' }}
         loading={loading}
-        filterControl={filterControl}
+        filterControl={
+          <ProductsFilterControl
+            {...{
+              dataWithShopInfo,
+              queryValue,
+              productTypeValue,
+              productVendorValue,
+              setQueryValue,
+              setProductTypeValue,
+              setProductVendorValue,
+              handleClearAll,
+            }}
+          />
+        }
         sortValue={sortValue}
         sortOptions={[
           { label: 'Product title A-Z', value: 'TITLE_ASC' },
