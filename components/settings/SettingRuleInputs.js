@@ -42,7 +42,7 @@ function SettingRuleInputs({
       label: labelValue,
       name: nameValue,
       position: value,
-      type: typeValue,
+      type: value === 'tag' ? 'text' : 'textarea',
       options: optionsValue,
     });
   };
