@@ -24,7 +24,7 @@ const app = next({
 const handle = app.getRequestHandler();
 const { SHOPIFY_API_SECRET, SHOPIFY_API_KEY, SCOPES } = process.env;
 let shopify;
-const createShopifyAPINode = async (ctx) => {
+const createShopifyAPINode = async (ctx, next) => {
   const { shop: shopName, accessToken } = ctx.session;
   shopify ??= new Shopify({
     shopName,
